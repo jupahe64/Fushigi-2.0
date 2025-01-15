@@ -1,0 +1,3 @@
+[submodule "src/submodules/Avalonia.UpDock"]
+	path = src/submodules/Avalonia.UpDock
+	url = https://github.com/jupahe64/Avalonia.UpDock.git

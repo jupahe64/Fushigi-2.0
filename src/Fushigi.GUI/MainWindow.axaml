@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Fushigi.GUI.MainWindow"
+        Title="Fushigi"
+        xmlns:up="clr-namespace:Avalonia.UpDock.Controls;assembly=Avalonia.UpDock">
+    
+    <DockPanel VerticalAlignment="Stretch">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..."/>
+                <Separator/>
+                <MenuItem Header="_Exit"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="Copy"/>
+                <MenuItem Header="Paste"/>
+            </MenuItem>
+        </Menu>
+        <up:DockingHost>
+            <up:SplitPanel Fractions="1, 5" Orientation="Horizontal">
+                <up:SplitPanel Fractions="1, 1" Orientation="Vertical">
+                    <up:DockingTabControl>
+                        <TabItem Header="Objects">
+                            <Panel Background="Black">
+                                <TextBlock HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center">
+                                    Objects-TreeView
+                                </TextBlock>
+                            
+                            </Panel>
+                        </TabItem>
+                    </up:DockingTabControl>
+                    <up:DockingTabControl>
+                        <TabItem Header="Properties">
+                            <Panel Background="Black">
+                                <TextBlock HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center">
+                                    Object Properties
+                                </TextBlock>
+                            </Panel>
+                        </TabItem>
+                    </up:DockingTabControl>
+                </up:SplitPanel>
+                <up:DockingTabControl>
+                    <TabItem Header="Viewports">
+                        <up:DockingTabControl>
+                            <TabItem Header="Main">
+                                <Panel Background="Black">
+                                    <TextBlock HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center">
+                                        2D Level-Scene
+                                    </TextBlock>
+                                </Panel>
+                            </TabItem>
+                            <TabItem Header="Sub1">
+                                <Panel Background="Black">
+                                    <TextBlock HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center">
+                                        2D Level-Scene
+                                    </TextBlock>
+                                </Panel>
+                            </TabItem>
+                        </up:DockingTabControl>
+                    </TabItem>
+                </up:DockingTabControl>
+            </up:SplitPanel>
+        </up:DockingHost>
+    </DockPanel>
+</Window>
