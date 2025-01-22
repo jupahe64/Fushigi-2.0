@@ -4,6 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>Fushigi.Logic</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,6 +12,10 @@
         <PackageReference Include="RstbLibrary" Version="1.0.2" />
         <PackageReference Include="SarcLibrary" Version="3.2.0" />
         <PackageReference Include="ZstdSharp.Port" Version="0.8.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Fushigi.Data\Fushigi.Data.csproj" />
     </ItemGroup>
 
 </Project>

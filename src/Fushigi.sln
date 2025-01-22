@@ -2,11 +2,13 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fushigi.GUI", "Fushigi.GUI\Fushigi.GUI.csproj", "{614FE422-9035-48BC-8958-2A85E415500F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fushigi.Core", "Fushigi.Core\Fushigi.Core.csproj", "{FFDA39FF-07B9-443F-9DDB-CF86FAEDF13D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fushigi.Logic", "Fushigi.Logic\Fushigi.Logic.csproj", "{FFDA39FF-07B9-443F-9DDB-CF86FAEDF13D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avalonia.UpDock", "submodules\Avalonia.UpDock\Avalonia.UpDock\Avalonia.UpDock.csproj", "{94F257F4-46A6-4BBD-B50A-790AECC9D0D9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "submodules", "submodules", "{F8FB056C-D120-49F2-BF02-B2E34DBC5810}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fushigi.Data", "Fushigi.Data\Fushigi.Data.csproj", "{237AA8F2-A595-45C6-AF14-E3398DD251B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +28,10 @@ Global
 		{94F257F4-46A6-4BBD-B50A-790AECC9D0D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94F257F4-46A6-4BBD-B50A-790AECC9D0D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94F257F4-46A6-4BBD-B50A-790AECC9D0D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{237AA8F2-A595-45C6-AF14-E3398DD251B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{237AA8F2-A595-45C6-AF14-E3398DD251B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{237AA8F2-A595-45C6-AF14-E3398DD251B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{237AA8F2-A595-45C6-AF14-E3398DD251B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{94F257F4-46A6-4BBD-B50A-790AECC9D0D9} = {F8FB056C-D120-49F2-BF02-B2E34DBC5810}

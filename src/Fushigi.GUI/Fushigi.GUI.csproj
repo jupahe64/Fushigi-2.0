@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Fushigi.Core\Fushigi.Core.csproj" />
+      <ProjectReference Include="..\Fushigi.Logic\Fushigi.Logic.csproj" />
       <ProjectReference Include="..\submodules\Avalonia.UpDock\Avalonia.UpDock\Avalonia.UpDock.csproj" />
     </ItemGroup>
 </Project>
