@@ -1,4 +1,9 @@
-﻿namespace Fushigi.Data;
+﻿using BymlLibrary;
+using RstbLibrary;
+using SarcLibrary;
+using ZstdSharp;
+
+namespace Fushigi.Data;
 
 public record RootDirectoryNotFoundErrorInfo(string Directory);
 public record MissingSubDirectoryErrorInfo(string RootDirectory, string SubDirectory);
@@ -76,6 +81,10 @@ public class RomFS
         {
             return (false, null);
         }
+        
+        Sarc bootupPack;
+        Rstb resourceSizeTable;
+        Dictionary<string, string> addressTable;
 
         //Load Bootup Pack
         {
@@ -86,8 +95,8 @@ public class RomFS
             
             if (filePath == null)
                 return (false, null);
-
-            //TODO actually load the Bootup Pack
+            
+            bootupPack = Sarc.FromBinary(Decompress(await File.ReadAllBytesAsync(filePath)));
         }
         
         //Load Resource Size Table
@@ -100,7 +109,7 @@ public class RomFS
             if (filePath == null)
                 return (false, null);
             
-            //TODO actually load the Resource Size Table
+            resourceSizeTable = Rstb.FromBinary(Decompress(await File.ReadAllBytesAsync(filePath)));
         }
 
         //Load AddressTable
@@ -114,18 +123,41 @@ public class RomFS
             if (filePath == null)
                 return (false, null);
             
-            //TODO actually load the AddressTable
+            var byml = Byml.FromBinary(Decompress(await File.ReadAllBytesAsync(filePath)));
+
+            addressTable = [];
+            foreach ((string key, var value) in byml.GetMap())
+                addressTable[key] = value.GetString();
         }
         
-        return (true, new RomFS(baseGameDirectory, modDirectory));
+        return (true, new RomFS(baseGameFolderPathRomFS, modFolderPathRomFS, 
+            bootupPack, resourceSizeTable, addressTable));
+    }
+
+    private static byte[] Decompress(byte[] compressedData)
+    {
+        var uncompressedData = new byte[Decompressor.GetDecompressedSize(compressedData)];
+        s_zsDecompressor.Unwrap(compressedData, uncompressedData);
+        return uncompressedData;
     }
     
     private readonly string _baseGameDirectory;
     private readonly string? _modDirectory;
     
-    private RomFS(string baseGameDirectory, string? modDirectory)
+    private Dictionary<string, string> _addressTable;
+    private Sarc _bootupPack;
+    private Rstb _resourceSizeTable;
+    
+    private static readonly Decompressor s_zsDecompressor = new Decompressor();
+    private static readonly Compressor s_zsCompressor = new Compressor(17);
+
+    private RomFS(string baseGameDirectory, string? modDirectory, 
+        Sarc bootupPack, Rstb resourceSizeTable, Dictionary<string, string> addressTable)
     {
         _baseGameDirectory = baseGameDirectory;
         _modDirectory = modDirectory;
+        _bootupPack = bootupPack;
+        _resourceSizeTable = resourceSizeTable;
+        _addressTable = addressTable;
     }
 }
