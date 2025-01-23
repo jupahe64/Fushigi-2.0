@@ -10,7 +10,7 @@
     <DockPanel VerticalAlignment="Stretch">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open..."/>
+                <MenuItem Header="_Open..." Click="Open_OnClick"/>
                 <Separator/>
                 <MenuItem Header="_Exit"/>
             </MenuItem>
