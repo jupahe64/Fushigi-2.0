@@ -18,28 +18,33 @@ public class RomFS
     }
     
     // just a few directories to check if a given basegame romfs folder is valid
-    private static readonly string[] s_requiredDirectories = ["BancMapUnit", "Gyml", "Pack", "System"];
+    internal static readonly string[] RequiredDirectories = ["BancMapUnit", "Gyml", "Pack", "System"];
     
     //system file locations
-    private static readonly string[] s_bootupPackFileLocation = ["Pack", "Bootup.Nin_NX_NVN.pack.zs"];
+    private static readonly string[] s_bootupPackFileLocation = 
+        "Pack/Bootup.Nin_NX_NVN.pack.zs".Split('/');
+
     private static readonly string[] s_addressTableFileLocation = 
-        ["System", "AddressTable", "Product.*.Nin_NX_NVN.atbl.byml.zs"];
+        "System/AddressTable/Product.*.Nin_NX_NVN.atbl.byml.zs".Split('/');
+
     private static readonly string[] s_resourceSizeTableFileLocation = 
-        ["System", "Resource", "ResourceSizeTable.Product.*.rsizetable.zs"];
+        "System/Resource/ResourceSizeTable.Product.*.rsizetable.zs".Split('/');
 
     public static (bool baseGameValid, bool modValid, bool isSameDirectory) ValidateRomFS(string baseGameFolderPathRomFS,
         string? modFolderPathRomFS)
     {
         bool baseGameValid = true, modValid = true, isSameDirectory = false;
 
+        //Check if directory for basegame exists and is valid
         if (!Directory.Exists(baseGameFolderPathRomFS))
             baseGameValid = false;
         else
         {
-            if (s_requiredDirectories.Any(x=> !Directory.Exists(Path.Combine(baseGameFolderPathRomFS, x))))
+            if (RequiredDirectories.Any(x => !Directory.Exists(Path.Combine(baseGameFolderPathRomFS, x))))
                 baseGameValid = false;
         }
         
+        //Check if directory for mod exists
         // ReSharper disable once InvertIf
         if (modFolderPathRomFS != null)
         {
@@ -60,80 +65,51 @@ public class RomFS
         Func<MissingSubDirectoryErrorInfo, Task> onMissingSubDirectory,
         Func<MissingSystemFileErrorInfo, Task> onMissingSystemFile)
     {
-        if (modFolderPathRomFS != null &&
-            Path.GetFullPath(baseGameFolderPathRomFS) == Path.GetFullPath(modFolderPathRomFS))
-        {
-            await onBaseGameAndModPathsIdentical();
-            return (false, null);
-        }
+        string baseGameDirectory = Path.GetFullPath(baseGameFolderPathRomFS);
+        string? modDirectory = modFolderPathRomFS != null ? Path.GetFullPath(modFolderPathRomFS) : null;
         
-        if (!Directory.Exists(baseGameFolderPathRomFS))
+        if (!await RomFSLoading.EnsureValid(
+                baseGameDirectory, modDirectory,
+                onBaseGameAndModPathsIdentical,
+                onRootDirectoryNotFound,
+                onMissingSubDirectory))
         {
-            await onRootDirectoryNotFound(new RootDirectoryNotFoundErrorInfo(baseGameFolderPathRomFS));
             return (false, null);
         }
-
-        // ReSharper disable InvertIf
-        foreach (string subDirectory in s_requiredDirectories)
-        {
-            if (!Directory.Exists(Path.Combine(baseGameFolderPathRomFS, subDirectory)))
-            {
-                await onMissingSubDirectory(new MissingSubDirectoryErrorInfo(baseGameFolderPathRomFS, subDirectory));
-                return (false, null);
-            } 
-        }
-        
-        if (modFolderPathRomFS != null && !Directory.Exists(modFolderPathRomFS))
-        {
-            await onRootDirectoryNotFound(new RootDirectoryNotFoundErrorInfo(modFolderPathRomFS));
-            return (false, null);
-        }
-        // ReSharper restore InvertIf
 
         //Load Bootup Pack
         {
-            string? filePath = await ResolveSystemFileLocation(SystemFile.BootUpPack, 
-                baseGameFolderPathRomFS, s_bootupPackFileLocation, onMissingSystemFile);
+            string? filePath = await RomFSLoading.ResolveSystemFileLocation(
+                baseGameDirectory, modDirectory, 
+                SystemFile.BootUpPack, s_bootupPackFileLocation, 
+                onMissingSystemFile);
             
             if (filePath == null)
                 return (false, null);
 
-            if (modFolderPathRomFS != null)
-            {
-                string? modFilePath = await ResolveSystemFileLocation(SystemFile.BootUpPack, 
-                    modFolderPathRomFS, s_bootupPackFileLocation, null);
-            
-                if (modFilePath != null)
-                    filePath = modFilePath;
-            }
-            
             //TODO actually load the Bootup Pack
         }
         
         //Load Resource Size Table
         {
-            string? filePath = await ResolveSystemFileLocation(SystemFile.ResourceSizeTable, 
-                baseGameFolderPathRomFS, s_resourceSizeTableFileLocation, onMissingSystemFile);
+            string? filePath = await RomFSLoading.ResolveSystemFileLocation(
+                baseGameDirectory, modDirectory,
+                SystemFile.ResourceSizeTable, s_resourceSizeTableFileLocation, 
+                onMissingSystemFile);
             
             if (filePath == null)
                 return (false, null);
-
-            if (modFolderPathRomFS != null)
-            {
-                string? modFilePath = await ResolveSystemFileLocation(SystemFile.ResourceSizeTable, 
-                    modFolderPathRomFS, s_resourceSizeTableFileLocation, null);
-            
-                if (modFilePath != null)
-                    filePath = modFilePath;
-            }
             
             //TODO actually load the Resource Size Table
         }
 
         //Load AddressTable
         {
-            var filePath = await ResolveSystemFileLocation(SystemFile.AddressTable, 
-                baseGameFolderPathRomFS, s_addressTableFileLocation, onMissingSystemFile);
+            string? filePath = await RomFSLoading.ResolveSystemFileLocation(
+                //we assume AddressTable to never be modified and therefore ignore it if it's in the mod romFS 
+                baseGameDirectory,
+                SystemFile.AddressTable, s_addressTableFileLocation, 
+                onMissingSystemFile);
             
             if (filePath == null)
                 return (false, null);
@@ -141,42 +117,12 @@ public class RomFS
             //TODO actually load the AddressTable
         }
         
-        return (true, new RomFS(baseGameFolderPathRomFS, modFolderPathRomFS));
+        return (true, new RomFS(baseGameDirectory, modDirectory));
     }
-
-    private static async Task<string?> ResolveSystemFileLocation(SystemFile kind, 
-        string rootDirectory, string[] fileLocation, 
-        Func<MissingSystemFileErrorInfo, Task>? onMissingSystemFile)
-    {
-        string directory = Path.Combine([rootDirectory, ..fileLocation[..^1]]);
-        if (!Directory.Exists(directory) && onMissingSystemFile != null)
-        {
-            await onMissingSystemFile(new MissingSystemFileErrorInfo(
-                directory, fileLocation[^1], 
-                kind, Directory.Exists(directory)));
-            return await Task.FromResult<string?>(null);
-        }
-
-        string fileNamePattern = fileLocation[^1];
-        string? filePath = Directory.EnumerateFiles(directory, fileLocation[^1])
-            .FirstOrDefault();
-
-        // ReSharper disable once InvertIf
-        if (filePath == null && onMissingSystemFile != null)
-        {
-            await onMissingSystemFile(new MissingSystemFileErrorInfo(
-                directory, fileLocation[^1], 
-                kind, DirectoryExists: true));
-            return await Task.FromResult<string?>(null);
-        }
-        
-        return filePath;
-    }
-    
     
     private readonly string _baseGameDirectory;
     private readonly string? _modDirectory;
-
+    
     private RomFS(string baseGameDirectory, string? modDirectory)
     {
         _baseGameDirectory = baseGameDirectory;
