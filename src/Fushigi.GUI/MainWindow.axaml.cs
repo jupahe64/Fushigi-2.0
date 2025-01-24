@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -102,8 +103,13 @@ public partial class MainWindow : Window
                 onMissingSystemFile: e => 
                     ShowSimpleDialog($"Missing System File {e.Kind}", 
                         e.DirectoryExists ? $"File like {e.FileNamePattern} not found in {e.Directory}." : 
-                            $"Directory {e.Directory} does not exist"))
-            is (true, { } loadedGame))
+                            $"Directory {e.Directory} does not exist"),
+                onFileDecompressionFailed: e => 
+                    ShowSimpleDialog($"Failed to decompress {Path.GetFileName(e.FilePathFS)}", 
+                        $"{e.InternalException.GetType().Name}: {e.InternalException.Message}"),
+                onFileReadFailed: e => ShowSimpleDialog($"Failed to read {e.FilePath[^1]}", 
+                    $"{e.InternalException.GetType().Name}: {e.InternalException.Message}")
+            ) is (true, { } loadedGame))
         {
             _loadedGame = loadedGame;
             await ShowSimpleDialog("Success", "Successfully loaded RomFS");

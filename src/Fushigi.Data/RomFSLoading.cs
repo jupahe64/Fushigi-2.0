@@ -43,7 +43,7 @@ internal static class RomFSLoading
         return true;
     }
 
-    public static async Task<string?> ResolveSystemFileLocation(string baseGameDirectory, string? modDirectory,
+    internal static async Task<string?> ResolveSystemFileLocation(string baseGameDirectory, string? modDirectory,
         RomFS.SystemFile kind,
         string[] fileLocation,
         Func<MissingSystemFileErrorInfo, Task>? onMissingSystemFile)
@@ -66,7 +66,7 @@ internal static class RomFSLoading
         return filePath;
     }
     
-    public static async Task<string?> ResolveSystemFileLocation(string rootDirectory, RomFS.SystemFile kind,
+    internal static async Task<string?> ResolveSystemFileLocation(string rootDirectory, RomFS.SystemFile kind,
         string[] fileLocation,
         Func<MissingSystemFileErrorInfo, Task>? onMissingSystemFile)
     {

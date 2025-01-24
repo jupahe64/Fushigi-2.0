@@ -8,14 +8,18 @@ public class Game
         Func<Task> onBaseGameAndModPathsIdentical,
         Func<RootDirectoryNotFoundErrorInfo, Task> onRootDirectoryNotFound,
         Func<MissingSubDirectoryErrorInfo, Task> onMissingSubDirectory,
-        Func<MissingSystemFileErrorInfo, Task> onMissingSystemFile)
+        Func<MissingSystemFileErrorInfo, Task> onMissingSystemFile, 
+        Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
+        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed)
     {
         // ReSharper disable once ConvertIfStatementToReturnStatement
         if (await RomFS.Load(baseGameRomFSPath, modRomFSPath,
                 onBaseGameAndModPathsIdentical,
                 onRootDirectoryNotFound,
                 onMissingSubDirectory,
-                onMissingSystemFile)
+                onMissingSystemFile,
+                onFileDecompressionFailed,
+                onFileReadFailed)
             is (true, { } loadedRomFS))
         {
             return (true, new Game(loadedRomFS));
