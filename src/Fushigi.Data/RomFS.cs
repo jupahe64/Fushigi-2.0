@@ -197,7 +197,7 @@ public class RomFS
             if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, Sarc.FromBinary, errorCallbacks, filePath) 
                 is (var file, exists: true, var success))
             {
-                Debug.Assert(!success || file == null); //success => file not null
+                Debug.Assert(!success || file != null); //success => file not null
                 return success ? (true, new PackInfo(file!, filePathFS)) : (false, null);
             }
         }
@@ -208,7 +208,7 @@ public class RomFS
             if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, Sarc.FromBinary, errorCallbacks, filePath) 
                 is (var file, exists: true, var success))
             {
-                Debug.Assert(!success || file == null); //success => file not null
+                Debug.Assert(!success || file != null); //success => file not null
                 return success ? (true, new PackInfo(file!, filePathFS)) : (false, null);
             }
         }
@@ -251,7 +251,7 @@ public class RomFS
             if (await RomFSFileLoading.LoadFileFromPack(filePath, pack, formatReader, onFileReadFailed) 
                 is (var file, exists: true, var success))
             {
-                Debug.Assert(!success || file == null); //success => file not null
+                Debug.Assert(!success || file != null); //success => file not null
                 return success ? (true, file) : (false, null);
             }
         }
@@ -262,7 +262,7 @@ public class RomFS
             if (await RomFSFileLoading.LoadFileFromPack(filePath, _bootupPack, formatReader, onFileReadFailed) 
                 is (var file, exists: true, var success))
             {
-                Debug.Assert(!success || file == null); //success => file not null
+                Debug.Assert(!success || file != null); //success => file not null
                 return success ? (true, file) : (false, null);
             }
         }
@@ -279,7 +279,7 @@ public class RomFS
             if (await RomFSFileLoading.LoadFileFromFS(filePathFS, isCompressed, formatReader, errorCallbacks, filePath) 
                 is (var file, exists: true, var success))
             {
-                Debug.Assert(!success || file == null); //success => file not null
+                Debug.Assert(!success || file != null); //success => file not null
                 return success ? (true, file) : (false, null);
             }
         }
@@ -289,7 +289,7 @@ public class RomFS
             if (await RomFSFileLoading.LoadFileFromFS(filePathFS, isCompressed, formatReader, errorCallbacks, filePath)
                 is (var file, exists: true, var success))
             {
-                Debug.Assert(!success || file == null); //success => file not null
+                Debug.Assert(!success || file != null); //success => file not null
                 return success ? (true, file) : (false, null);
             }
         }
