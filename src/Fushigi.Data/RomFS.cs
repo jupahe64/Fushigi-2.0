@@ -23,6 +23,10 @@ public record FileFormatReaderErrorInfo(string[] FilePath, Exception InternalExc
 
 public record FilePathResolutionErrorInfo((string path, bool isArchive)[] SearchPathsFS, string[] FilePath);
 
+public record struct FileFormatDescriptor<TFormat>(bool IsCompressed, 
+    Func<ArraySegment<byte>, TFormat> Reader, 
+    Func<ArraySegment<byte>, TFormat>? Writer = null);
+
 public class PackInfo
 {
     internal Sarc Arc { get; }
@@ -84,7 +88,7 @@ public class RomFS
         
         return (baseGameValid, modValid, isSameDirectory);
     }
-    
+
     public static async Task<(bool success, RomFS? loadedRomFS)> Load(
         string baseGameFolderPathRomFS, string? modFolderPathRomFS,
         Func<Task> onBaseGameAndModPathsIdentical,
@@ -123,7 +127,7 @@ public class RomFS
             if (filePathFS == null)
                 return (false, null);
             
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, Sarc.FromBinary, callbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, callbacks, filePath)
                 is not ({} _bootupPack, exists: true, success: true))
                 return (false, null);
             
@@ -145,7 +149,7 @@ public class RomFS
             if (filePathFS == null)
                 return (false, null);
             
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, b => Rstb.FromBinary(b), callbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_resourceSizeTableFormat, callbacks, filePath)
                 is not ({} _resourceSizeTable, exists: true, success: true))
                 return (false, null);
             
@@ -166,8 +170,8 @@ public class RomFS
             
             if (filePathFS == null)
                 return (false, null);
-            
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, b => Byml.FromBinary(b), callbacks, filePath)
+
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_addressTableFormat, callbacks, filePath)
                 is not ({} byml, exists: true, success: true))
                 return (false, null);
             
@@ -194,7 +198,7 @@ public class RomFS
         if (_modDirectory != null)
         {
             string filePathFS = checkedModFSFile = Path.Combine([_modDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, Sarc.FromBinary, errorCallbacks, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorCallbacks, filePath) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -205,7 +209,7 @@ public class RomFS
         // try load from romFS
         {
             string filePathFS = checkedRomFSFile = Path.Combine([_baseGameDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, true, Sarc.FromBinary, errorCallbacks, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorCallbacks, filePath) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -220,8 +224,8 @@ public class RomFS
     }
 
     public async Task<(bool success, TFormat? content)> LoadFile<TFormat>(
-        string[] filePath, bool isCompressed,
-        Func<ArraySegment<byte>, TFormat> formatReader,
+        string[] filePath, 
+        FileFormatDescriptor<TFormat> format,
         Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
         Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
         Func<FileFormatReaderErrorInfo, Task> onFileReadFailed,
@@ -245,10 +249,10 @@ public class RomFS
 
         #region Check Packs
         // check given pack
-        if (!isCompressed && pack != null)
+        if (!format.IsCompressed && pack != null)
         {
             checkedGivenPackFile = pack.FilePathFS;
-            if (await RomFSFileLoading.LoadFileFromPack(filePath, pack, formatReader, onFileReadFailed) 
+            if (await RomFSFileLoading.LoadFileFromPack(filePath, pack, format.Reader, onFileReadFailed) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -256,10 +260,10 @@ public class RomFS
             }
         }
         // check bootup pack
-        if (!isCompressed) //a bit ugly but nesting is uglier
+        if (!format.IsCompressed) //a bit ugly but nesting is uglier
         {
             checkedBootupPackFile = _bootupPack.FilePathFS;
-            if (await RomFSFileLoading.LoadFileFromPack(filePath, _bootupPack, formatReader, onFileReadFailed) 
+            if (await RomFSFileLoading.LoadFileFromPack(filePath, _bootupPack, format.Reader, onFileReadFailed) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -276,7 +280,7 @@ public class RomFS
         if (_modDirectory != null)
         {
             string filePathFS = checkedModFSFile = Path.Combine([_modDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, isCompressed, formatReader, errorCallbacks, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorCallbacks, filePath) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -286,7 +290,7 @@ public class RomFS
         //check romFS
         {
             string filePathFS = checkedRomFSFile = Path.Combine([_baseGameDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, isCompressed, formatReader, errorCallbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorCallbacks, filePath)
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -327,6 +331,15 @@ public class RomFS
     private readonly Dictionary<string, string> _addressTable;
     private readonly PackInfo _bootupPack;
     private readonly Rstb _resourceSizeTable;
+    
+    private static readonly FileFormatDescriptor<Sarc> s_packFormatDescriptor
+        = new(IsCompressed: true, Reader: Sarc.FromBinary);
+    
+    private static readonly FileFormatDescriptor<Byml> s_addressTableFormat
+        = new(IsCompressed: true, b => Byml.FromBinary(b));
+    
+    private static readonly FileFormatDescriptor<Rstb> s_resourceSizeTableFormat
+        = new(IsCompressed: true, b => Rstb.FromBinary(b));
     
     private static readonly Compressor s_zsCompressor = new Compressor(17);
 

@@ -5,8 +5,8 @@ namespace Fushigi.Data;
 public static class RomFSFileLoading
 {
     internal static async Task<(TFormat? file, bool exists, bool success)> LoadFileFromFS<TFormat>(
-        string filePathFS, bool isCompressed, 
-        Func<ArraySegment<byte>, TFormat> formatReader,
+        string filePathFS, 
+        FileFormatDescriptor<TFormat> format,
         (Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
         Func<FileFormatReaderErrorInfo, Task> onInvalidFileFormat) callbacks,
         string[] filePath)
@@ -16,7 +16,7 @@ public static class RomFSFileLoading
             return (null, exists: false, success: false);
 
         ArraySegment<byte> bytes;
-        if (!isCompressed)
+        if (!format.IsCompressed)
             bytes = await File.ReadAllBytesAsync(filePathFS);
         else
         {
@@ -28,7 +28,7 @@ public static class RomFSFileLoading
             bytes = _bytes;
         }
 
-        var result = await ReadFileFormat(bytes, formatReader, callbacks.onInvalidFileFormat, filePath);
+        var result = await ReadFileFormat(bytes, format.Reader, callbacks.onInvalidFileFormat, filePath);
         return (result.file, exists: true, result.success);
     }
 
