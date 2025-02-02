@@ -12,6 +12,8 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     where T : SerializableBymlObject<T>, new()
 {
     private BymlMap? _map;
+    
+    public static readonly BymlConversion<T> Conversion = new(DeserializeFrom, Serialize);
 
     public static T DeserializeFrom(Byml byml)
     {
@@ -235,7 +237,6 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
 
             map[name] = value;
         }
-
         public void SetObject<TObject>(ref TObject value, string name)
             where TObject : class, IDeserializedBymlObject
         {
