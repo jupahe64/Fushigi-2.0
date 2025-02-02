@@ -112,7 +112,7 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
         }
         */
         public void SetArray<TItem>(ref List<TItem> value, string name, BymlConversion<TItem> conversion, bool optional = false)
-            => SetArray<TItem>(ref value, name, conversion.Deserialize);
+            => SetArray<TItem>(ref value, name, conversion.Deserialize, optional);
         public void SetArray<TItem>(ref List<TItem> value, string name, Func<Byml, TItem> mapper, bool optional = false)
         {
             if (!map.TryGetValue(name, out var node)) {

@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <PackageReference Include="BymlLibrary" Version="2.1.18" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="RstbLibrary" Version="1.0.2" />
       <PackageReference Include="SarcLibrary" Version="3.2.0" />
       <PackageReference Include="ZstdSharp.Port" Version="0.8.4" />

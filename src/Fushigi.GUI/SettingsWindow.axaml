@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="300"
+        x:Class="Fushigi.GUI.SettingsWindow"
+        Title="SettingsWindow"
+        TransparencyLevelHint="AcrylicBlur"
+        ExtendClientAreaToDecorationsHint="True">
+    <Grid ColumnDefinitions="Auto,60*,Auto" RowDefinitions="Auto,Auto"  Margin="30">
+        <TextBlock Margin="0 5" Text="Base RomFS:" Grid.Row="0" Grid.Column="0"/>
+        <TextBox Name="RomFSPath" Text="" ToolTip.Tip="Enter path to base game RomFS" Grid.Row="0" Grid.Column="1"/>
+        <Button Margin="5 0" Content="Folder" Click="PickRomFSPath" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Left"/>
+        <TextBlock Margin="0 5" Text="Mod RomFS:" Grid.Row="1" Grid.Column="0"/>
+        <TextBox Name="ModRomFSPath" Text="" ToolTip.Tip="Enter path to Modded RomFS save location" Grid.Row="1" Grid.Column="1"/>
+        <Button Margin="5 0" Content="ModFolder" Click="PickModRomFSPath" Grid.Row="1" Grid.Column="3" HorizontalAlignment="Left"/>
+    </Grid>
+</Window>

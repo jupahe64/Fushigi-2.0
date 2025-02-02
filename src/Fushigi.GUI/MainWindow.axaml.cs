@@ -7,6 +7,9 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
 using Fushigi.Data;
+using Fushigi.Data.Files;
+using Fushigi.Data.LevelObjects;
+using static Fushigi.Data.RomFSFileLoading;
 using Fushigi.Logic;
 
 namespace Fushigi.GUI;
@@ -16,6 +19,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        UserSettings.Load();
+        if (!string.IsNullOrEmpty(UserSettings.GetRomFSPath()))
+        {
+            LoadGame(UserSettings.GetRomFSPath(), UserSettings.GetModRomFSPath());
+        }
     }
     
     private Game? _loadedGame;
@@ -50,47 +58,31 @@ public partial class MainWindow : Window
         await w.ShowDialog(this);
     }
 
+    private async void ShowSettingsDialog(object? sender, RoutedEventArgs e)
+    {
+        var settingsDialog = new SettingsWindow();
+
+        await settingsDialog.ShowDialog<string>(this);
+        if (!string.IsNullOrEmpty(UserSettings.GetRomFSPath()))
+        {
+            LoadGame(UserSettings.GetRomFSPath(), UserSettings.GetModRomFSPath());
+        }
+
+        Debug.Write(settingsDialog.RomFSPath.Text);
+    }
+
     private async void Open_OnClick(object? sender, RoutedEventArgs e)
     {
         //this is just for testing purposes
-        var files = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Select the basegame romfs folder",
-        });
-        
-        if (files.Count == 0)
-            return;
-
-        string baseGameRomFSPath = files[0].TryGetLocalPath()!;
-        Debug.Assert(baseGameRomFSPath != null);
-        
-        (bool baseGameValid, _, _) = RomFS.ValidateRomFS(baseGameRomFSPath, null);
-        
-        string? modRomFSPath = null;
-        if (!baseGameValid)
-            await ShowSimpleDialog("Info", "RomFS path is invalid.");
-        else
-        {
-            files = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-            {
-                Title = "Select the mod romfs folder (Optional)",
-            });
-            
-            if (files.Count > 0)
-            {
-                modRomFSPath = files[0].TryGetLocalPath();
-                Debug.Assert(modRomFSPath != null);
-            }
-            
-            (_, bool modValid, bool sameDirectory) = RomFS.ValidateRomFS(baseGameRomFSPath, modRomFSPath);
-            
-            if (!modValid)
-                await ShowSimpleDialog("Info", "mod RomFS path is invalid. This should never happen.");
-            else if (sameDirectory)
-                await ShowSimpleDialog("Info", "mod and basegame RomFS paths are the same.");
-        }
-        
-        // ReSharper disable once InvertIf
+        var (success, area) = await _loadedGame.LoadCourse(
+            ["BancMapUnit", "Course001_Course.bcett.byml.zs"],
+            onFileNotFound: (info) => throw new(), 
+            onFileDecompressionFailed: (info) => throw new(), 
+            onFileReadFailed: (info) => throw new()
+            );
+    }
+    public async void LoadGame(string baseGameRomFSPath, string? modRomFSPath)
+    {
         if (await Game.Load(baseGameRomFSPath, modRomFSPath,
                 onBaseGameAndModPathsIdentical: () => 
                     ShowSimpleDialog("Error", "Basegame and Mod romFS paths cannot be the same."), 
