@@ -1,9 +1,6 @@
 using Fushigi.Data.BymlSerialization;
-using Fushigi.Data;
-using BymlLibrary;
-using System.Numerics;
 
-namespace Fushigi.Data.LevelObjects;
+namespace Fushigi.Data.StageObjects;
 
 public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
 {

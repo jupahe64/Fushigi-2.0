@@ -1,11 +1,9 @@
-using Fushigi.Data.BymlSerialization;
-using Fushigi.Data;
-using BymlLibrary;
 using System.Numerics;
+using Fushigi.Data.BymlSerialization;
 
-namespace Fushigi.Data.LevelObjects;
+namespace Fushigi.Data.StageObjects;
 
-public class CourseActor : SerializableBymlObject<CourseActor>
+public class StageActor : SerializableBymlObject<StageActor>
 {
     public uint AreaHash;
     public ulong Hash;

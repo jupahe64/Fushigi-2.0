@@ -1,8 +1,4 @@
 using Fushigi.Data.BymlSerialization;
-using Fushigi.Data.LevelObjects;
-using BymlLibrary;
-using ZstdSharp;
-using Revrs;
 
 namespace Fushigi.Data.Files.GymlTypes;
 

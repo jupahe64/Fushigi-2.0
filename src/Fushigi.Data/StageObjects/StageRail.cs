@@ -1,11 +1,9 @@
-using Fushigi.Data.BymlSerialization;
-using Fushigi.Data;
-using BymlLibrary;
 using System.Numerics;
+using Fushigi.Data.BymlSerialization;
 
-namespace Fushigi.Data.LevelObjects;
+namespace Fushigi.Data.StageObjects;
 
-public class CourseRail : SerializableBymlObject<CourseRail>
+public class StageRail : SerializableBymlObject<StageRail>
 {
     public List<RailPoint> Points = null!;
     public uint AreaHash;

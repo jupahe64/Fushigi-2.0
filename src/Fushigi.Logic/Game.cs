@@ -31,7 +31,7 @@ public class Game
         return (false, null);
     }
 
-    public async Task<(bool success, CourseArea? loadedStage)> LoadCourse(
+    public async Task<(bool success, StageBcett? loadedStage)> LoadCourse(
         string[] coursePath,
         Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
         Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
@@ -40,7 +40,7 @@ public class Game
         #region LoadCourse
         var (success, courseFile) = await _romFs.LoadFile(
             coursePath,
-            FormatDescriptors.GetBcettFormat<CourseArea>(), 
+            FormatDescriptors.GetBcettFormat<StageBcett>(), 
             onFileNotFound, 
             onFileDecompressionFailed, 
             onFileReadFailed 
@@ -62,7 +62,6 @@ public class Game
 
             if (loadedStageParam && stageParam.Components.ContainsKey("AreaParam"))
             {
-                courseFile.StageParam = stageParam;
                 var areaPath = ((string)stageParam.Components["AreaParam"]).Split("/")[1..];
                 areaPath[^1] = areaPath[^1].Replace(".gyml", ".bgyml");
 
@@ -73,9 +72,6 @@ public class Game
                     onFileDecompressionFailed, 
                     onFileReadFailed 
                     );
-
-                if (loadedAreaParam)
-                    courseFile.AreaParam = areaParam;
             }
         }
         #endregion
@@ -90,9 +86,6 @@ public class Game
                 onFileNotFound, 
                 onFileDecompressionFailed, 
                 onFileReadFailed);
-                
-            if (loadedArea)
-                courseFile.Areas.Add(areaName, area);
         }
         #endregion
         return (success, courseFile);

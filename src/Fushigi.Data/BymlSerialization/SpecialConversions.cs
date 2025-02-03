@@ -1,9 +1,6 @@
 ﻿using System.Numerics;
 using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
-using Fushigi.Data.LevelObjects;
-using static Fushigi.Data.Files.CourseArea;
-using static Fushigi.Data.LevelObjects.CourseBgUnit;
 
 namespace Fushigi.Data.BymlSerialization;
 
