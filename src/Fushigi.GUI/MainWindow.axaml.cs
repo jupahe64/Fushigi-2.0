@@ -6,11 +6,13 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Fushigi.Data;
+using Fushigi.Data.Files;
+using Fushigi.Data.RomFSExtensions;
 using Fushigi.Logic;
 
 namespace Fushigi.GUI;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, IRomFSLoadingErrorHandler
 {
     public MainWindow()
     {
@@ -67,43 +69,68 @@ public partial class MainWindow : Window
         Debug.Write(settingsDialog.RomFSPath.Text);
     }
 
+    private class LoadCourseErrorHandler : IGymlFileLoadingErrorHandler
+    {
+        public Task OnFileNotFound(FilePathResolutionErrorInfo info)
+            => throw new System.NotImplementedException();
+        
+        public Task OnFileDecompressionFailed(FileDecompressionErrorInfo info) 
+            => throw new System.NotImplementedException();
+
+        public Task OnFileReadFailed(FileFormatReaderErrorInfo info)
+            => throw new System.NotImplementedException();
+
+        public Task OnInvalidFileRefPath(InvalidFileRefPathErrorInfo info)
+            => throw new System.NotImplementedException();
+
+        public Task OnGymlTypeMismatch(LoadedGymlTypeMismatchErrorInfo info)
+            => throw new System.NotImplementedException();
+
+        public Task OnCyclicInheritance(CyclicInheritanceErrorInfo info)
+            => throw new System.NotImplementedException();
+    }
+
     private async void Open_OnClick(object? sender, RoutedEventArgs e)
     {
         //this is just for testing purposes
         var (success, area) = await _loadedGame.LoadCourse(
             ["BancMapUnit", "Course001_Course.bcett.byml.zs"],
-            onFileNotFound: (info) => throw new(), 
-            onFileDecompressionFailed: (info) => throw new(), 
-            onFileReadFailed: (info) => throw new(),
-            onGymlTypeMismatch: (info) => throw new(),
-            onInvalidFileRefPath: (info) => throw new(),
-            onCyclicInheritance: (info) => throw new()
-            );
+            new LoadCourseErrorHandler());
     }
+    
     public async void LoadGame(string baseGameRomFSPath, string? modRomFSPath)
     {
         if (await Game.Load(baseGameRomFSPath, modRomFSPath,
-                onBaseGameAndModPathsIdentical: () => 
-                    ShowSimpleDialog("Error", "Basegame and Mod romFS paths cannot be the same."), 
-                onRootDirectoryNotFound: _ => {
-                    Debug.Fail("Should never happen");
-                    return Task.CompletedTask;
-                },
-                onMissingSubDirectory: e => 
-                    ShowSimpleDialog("Invalid RomFS", $"{e.RootDirectory} is missing a {e.SubDirectory} directory."), 
-                onMissingSystemFile: e => 
-                    ShowSimpleDialog($"Missing System File {e.Kind}", 
-                        e.DirectoryExists ? $"File like {e.FileNamePattern} not found in {e.Directory}." : 
-                            $"Directory {e.Directory} does not exist"),
-                onFileDecompressionFailed: e => 
-                    ShowSimpleDialog($"Failed to decompress {Path.GetFileName(e.FilePathFS)}", 
-                        $"{e.InternalException.GetType().Name}: {e.InternalException.Message}"),
-                onFileReadFailed: e => ShowSimpleDialog($"Failed to read {e.FilePath[^1]}", 
-                    $"{e.InternalException.GetType().Name}: {e.InternalException.Message}")
-            ) is (true, { } loadedGame))
+                errorHandler: this) is (true, { } loadedGame))
         {
             _loadedGame = loadedGame;
             await ShowSimpleDialog("Success", "Successfully loaded RomFS");
         }
     }
+
+    public Task OnBaseGameAndModPathsIdentical() =>
+        ShowSimpleDialog("Error", "Basegame and Mod romFS paths cannot be the same.");
+
+    public Task OnRootDirectoryNotFound(RootDirectoryNotFoundErrorInfo e)
+    {
+        Debug.Fail("Should never happen");
+        return Task.CompletedTask;
+    }
+
+    public Task OnMissingSubDirectory(MissingSubDirectoryErrorInfo e) =>
+        ShowSimpleDialog("Invalid RomFS", $"{e.RootDirectory} is missing a {e.SubDirectory} directory.");
+
+    public Task OnMissingSystemFile(MissingSystemFileErrorInfo e) =>
+        ShowSimpleDialog($"Missing System File {e.Kind}",
+            e.DirectoryExists
+                ? $"File like {e.FileNamePattern} not found in {e.Directory}."
+                : $"Directory {e.Directory} does not exist");
+
+    public Task OnFileDecompressionFailed(FileDecompressionErrorInfo e) =>
+        ShowSimpleDialog($"Failed to decompress {Path.GetFileName(e.FilePathFS)}",
+            $"{e.InternalException.GetType().Name}: {e.InternalException.Message}");
+
+    public Task OnFileReadFailed(FileFormatReaderErrorInfo e) => 
+        ShowSimpleDialog($"Failed to read {e.FilePath[^1]}",
+            $"{e.InternalException.GetType().Name}: {e.InternalException.Message}");
 }

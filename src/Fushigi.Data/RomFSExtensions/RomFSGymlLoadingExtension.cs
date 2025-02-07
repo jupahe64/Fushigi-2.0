@@ -7,17 +7,18 @@ namespace Fushigi.Data.RomFSExtensions;
 public record LoadedGymlTypeMismatchErrorInfo(string GymlPath, Type Expected, Type AlreadyLoaded);
 public record CyclicInheritanceErrorInfo(string[] InheritanceCycle);
 
+public interface IGymlFileLoadingErrorHandler : IFileResolutionAndLoadingErrorHandler, IFileRefPathErrorHandler
+{
+    Task OnGymlTypeMismatch(LoadedGymlTypeMismatchErrorInfo info);
+    Task OnCyclicInheritance(CyclicInheritanceErrorInfo info);
+}
+
 public static class RomFSGymlLoadingExtension
 {
     private static readonly Dictionary<RomFS, GymlManager> s_gymlManagerLookup = [];
     
     public static async Task<(bool success, T?)> LoadGyml<T>(this RomFS romFS, string gymlPath,
-        Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
-        Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
-        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed,
-        Func<LoadedGymlTypeMismatchErrorInfo, Task> onGymlTypeMismatch,
-        Func<InvalidFileRefPathErrorInfo, Task> onInvalidFileRefPath,
-        Func<CyclicInheritanceErrorInfo, Task> onCyclicInheritance,
+        IGymlFileLoadingErrorHandler errorHandler,
         PackInfo? pack = null)
         where T : GymlFile<T>, new()
     {
@@ -29,12 +30,7 @@ public static class RomFSGymlLoadingExtension
 
         return await gymlManager.LoadGyml<T>(gymlPath,
             ImmutableList<string>.Empty, //no need to allocate anything until we actually have an inheritance chain
-            onFileNotFound,
-            onFileDecompressionFailed,
-            onFileReadFailed,
-            onGymlTypeMismatch,
-            onInvalidFileRefPath,
-            onCyclicInheritance,
+            errorHandler,
             pack);
     }
 
@@ -45,12 +41,7 @@ public static class RomFSGymlLoadingExtension
         
         public async Task<(bool success, T?)> LoadGyml<T>(string gymlPath,
             ImmutableList<string> inheritanceChain, //only works with recursion, stack like
-            Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
-            Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
-            Func<FileFormatReaderErrorInfo, Task> onFileReadFailed,
-            Func<LoadedGymlTypeMismatchErrorInfo, Task> onGymlTypeMismatch,
-            Func<InvalidFileRefPathErrorInfo, Task> onInvalidFileRefPath,
-            Func<CyclicInheritanceErrorInfo, Task> onCyclicInheritance,
+            IGymlFileLoadingErrorHandler errorHandler,
             PackInfo? pack = null)
             where T : GymlFile<T>, new()
         {
@@ -58,7 +49,7 @@ public static class RomFSGymlLoadingExtension
             {
                 if (alreadyLoadedGyml is not T alreadyLoadedGymlT)
                 {
-                    await onGymlTypeMismatch(
+                    await errorHandler.OnGymlTypeMismatch(
                         new LoadedGymlTypeMismatchErrorInfo(gymlPath, typeof(T), alreadyLoadedGyml.GetType())
                     );
                     return (false, null);
@@ -67,15 +58,13 @@ public static class RomFSGymlLoadingExtension
             }
 
             if (await FileRefPathConversion.GetRomFSFilePath(gymlPath, s_gymlSuffix,
-                    onInvalidFileRefPath) is not (true, { } filePath))
+                    errorHandler) is not (true, { } filePath))
             {
                 return (false, null);
             }
             
             if (await romFS.LoadFile(filePath, FormatDescriptors.GetGymlFormat<T>(), 
-                    onFileNotFound,
-                    onFileDecompressionFailed,
-                    onFileReadFailed, 
+                    errorHandler, 
                     pack
                 ) is not (true, {} loadedGyml))
             {
@@ -89,18 +78,13 @@ public static class RomFSGymlLoadingExtension
                 if (inheritanceChain.Contains(loadedGyml.ParentGymlRefString))
                 {
                     //we were about to load a gyml that's already in our inheritance chain
-                    await onCyclicInheritance(new CyclicInheritanceErrorInfo(inheritanceChain.ToArray()));
+                    await errorHandler.OnCyclicInheritance(new CyclicInheritanceErrorInfo(inheritanceChain.ToArray()));
                     return (false, null);
                 }
                 
                 if (await LoadGyml<T>(loadedGyml.ParentGymlRefString,
                         inheritanceChain,
-                        onFileNotFound,
-                        onFileDecompressionFailed,
-                        onFileReadFailed,
-                        onGymlTypeMismatch,
-                        onInvalidFileRefPath,
-                        onCyclicInheritance,
+                        errorHandler,
                         pack) is not (true, {} loadedParentGyml))
                 {
                     return (false, null);

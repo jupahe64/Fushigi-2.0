@@ -23,6 +23,25 @@ public record FileFormatReaderErrorInfo(string[] FilePath, Exception InternalExc
 
 public record FilePathResolutionErrorInfo((string path, bool isArchive)[] SearchPathsFS, string[] FilePath);
 
+public interface IRomFSLoadingErrorHandler : IFileLoadingErrorHandler
+{
+    Task OnBaseGameAndModPathsIdentical();
+    Task OnRootDirectoryNotFound(RootDirectoryNotFoundErrorInfo info);
+    Task OnMissingSubDirectory(MissingSubDirectoryErrorInfo info);
+    Task OnMissingSystemFile(MissingSystemFileErrorInfo info); 
+}
+
+public interface IFileResolutionAndLoadingErrorHandler : IFileLoadingErrorHandler
+{
+    Task OnFileNotFound(FilePathResolutionErrorInfo info);
+}
+
+public interface IFileLoadingErrorHandler
+{
+    Task OnFileDecompressionFailed(FileDecompressionErrorInfo info);
+    Task OnFileReadFailed(FileFormatReaderErrorInfo info);
+}
+
 public record struct FileFormatDescriptor<TFormat>(bool IsCompressed, 
     Func<ArraySegment<byte>, TFormat> Reader, 
     Func<ArraySegment<byte>, TFormat>? Writer = null);
@@ -91,26 +110,17 @@ public class RomFS
 
     public static async Task<(bool success, RomFS? loadedRomFS)> Load(
         string baseGameFolderPathRomFS, string? modFolderPathRomFS,
-        Func<Task> onBaseGameAndModPathsIdentical,
-        Func<RootDirectoryNotFoundErrorInfo, Task> onRootDirectoryNotFound,
-        Func<MissingSubDirectoryErrorInfo, Task> onMissingSubDirectory,
-        Func<MissingSystemFileErrorInfo, Task> onMissingSystemFile, 
-        Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
-        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed)
+        IRomFSLoadingErrorHandler errorHandler)
     {
         string baseGameDirectory = Path.GetFullPath(baseGameFolderPathRomFS);
         string? modDirectory = modFolderPathRomFS != null ? Path.GetFullPath(modFolderPathRomFS) : null;
         
         if (!await RomFSLoading.EnsureValid(
                 baseGameDirectory, modDirectory,
-                onBaseGameAndModPathsIdentical,
-                onRootDirectoryNotFound,
-                onMissingSubDirectory))
+                errorHandler))
         {
             return (false, null);
         }
-
-        var callbacks = (onFileDecompressionFailed, onFileReadFailed);
 
         //Load Bootup Pack
         string bootupPackFilePathFS;
@@ -122,12 +132,12 @@ public class RomFS
             string? filePathFS = await RomFSLoading.ResolveSystemFileLocation(
                 baseGameDirectory, modDirectory, 
                 kind, filePath, 
-                onMissingSystemFile);
+                errorHandler);
             
             if (filePathFS == null)
                 return (false, null);
             
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, callbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler, filePath)
                 is not ({} _bootupPack, exists: true, success: true))
                 return (false, null);
             
@@ -144,12 +154,12 @@ public class RomFS
             string? filePathFS = await RomFSLoading.ResolveSystemFileLocation(
                 baseGameDirectory, modDirectory,
                 kind, filePath, 
-                onMissingSystemFile);
+                errorHandler);
             
             if (filePathFS == null)
                 return (false, null);
             
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_resourceSizeTableFormat, callbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_resourceSizeTableFormat, errorHandler, filePath)
                 is not ({} _resourceSizeTable, exists: true, success: true))
                 return (false, null);
             
@@ -166,12 +176,12 @@ public class RomFS
                 //we assume AddressTable to never be modified and therefore ignore it if it's in the mod romFS 
                 baseGameDirectory,
                 kind, filePath, 
-                onMissingSystemFile);
+                errorHandler);
             
             if (filePathFS == null)
                 return (false, null);
 
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_addressTableFormat, callbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_addressTableFormat, errorHandler, filePath)
                 is not ({} byml, exists: true, success: true))
                 return (false, null);
             
@@ -186,19 +196,15 @@ public class RomFS
     }
 
     public async Task<(bool success, PackInfo? pack)> LoadPack(string[] filePath,
-        Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
-        Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
-        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed)
+        IFileResolutionAndLoadingErrorHandler errorHandler)
     {
         string? checkedModFSFile = null, checkedRomFSFile;
-        
-        var errorCallbacks = (onFileDecompressionFailed, onFileReadFailed);
         
         // try load from modFS
         if (_modDirectory != null)
         {
             string filePathFS = checkedModFSFile = Path.Combine([_modDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorCallbacks, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler, filePath) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -209,7 +215,7 @@ public class RomFS
         // try load from romFS
         {
             string filePathFS = checkedRomFSFile = Path.Combine([_baseGameDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorCallbacks, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler, filePath) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -218,7 +224,7 @@ public class RomFS
         }
         
         // file resolution failed, generate the error info and report
-        await onFileNotFound(GenerateFilePathResolutionErrorInfo(
+        await errorHandler.OnFileNotFound(GenerateFilePathResolutionErrorInfo(
             null, null, checkedModFSFile, checkedRomFSFile, filePath));
         return (false, null);
     }
@@ -226,9 +232,7 @@ public class RomFS
     public async Task<(bool success, TFormat? content)> LoadFile<TFormat>(
         string[] filePath, 
         FileFormatDescriptor<TFormat> format,
-        Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
-        Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
-        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed,
+        IFileResolutionAndLoadingErrorHandler errorHandler,
         PackInfo? pack = null)
         where TFormat : class
     {
@@ -252,7 +256,7 @@ public class RomFS
         if (!format.IsCompressed && pack != null)
         {
             checkedGivenPackFile = pack.FilePathFS;
-            if (await RomFSFileLoading.LoadFileFromPack(filePath, pack, format.Reader, onFileReadFailed) 
+            if (await RomFSFileLoading.LoadFileFromPack(filePath, pack, format.Reader, errorHandler) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -263,7 +267,7 @@ public class RomFS
         if (!format.IsCompressed) //a bit ugly but nesting is uglier
         {
             checkedBootupPackFile = _bootupPack.FilePathFS;
-            if (await RomFSFileLoading.LoadFileFromPack(filePath, _bootupPack, format.Reader, onFileReadFailed) 
+            if (await RomFSFileLoading.LoadFileFromPack(filePath, _bootupPack, format.Reader, errorHandler) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -274,13 +278,12 @@ public class RomFS
         
         string checkedModFSFile = null, checkedRomFSFile;
         #region Check FileSystem
-        var errorCallbacks = (onFileDecompressionFailed, onFileReadFailed);
         
         // check modFS
         if (_modDirectory != null)
         {
             string filePathFS = checkedModFSFile = Path.Combine([_modDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorCallbacks, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorHandler, filePath) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -290,7 +293,7 @@ public class RomFS
         //check romFS
         {
             string filePathFS = checkedRomFSFile = Path.Combine([_baseGameDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorCallbacks, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorHandler, filePath)
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -300,7 +303,7 @@ public class RomFS
         #endregion
         
         // file resolution failed, generate the error info and report
-        await onFileNotFound(GenerateFilePathResolutionErrorInfo(
+        await errorHandler.OnFileNotFound(GenerateFilePathResolutionErrorInfo(
             checkedGivenPackFile, checkedBootupPackFile, checkedModFSFile, checkedRomFSFile, filePath));
 
         return (false, default);

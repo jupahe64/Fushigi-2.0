@@ -6,21 +6,19 @@ internal static class RomFSLoading
 {
     public static async Task<bool> EnsureValid(
         string baseGameDirectory, string? modDirectory,
-        Func<Task> onBaseGameAndModPathsIdentical,
-        Func<RootDirectoryNotFoundErrorInfo, Task> onRootDirectoryNotFound,
-        Func<MissingSubDirectoryErrorInfo, Task> onMissingSubDirectory)
+        IRomFSLoadingErrorHandler errorHandler)
     {
         //Check if root directory for baseGame exists
         if (modDirectory != null &&
             Path.GetFullPath(baseGameDirectory) == Path.GetFullPath(modDirectory))
         {
-            await onBaseGameAndModPathsIdentical();
+            await errorHandler.OnBaseGameAndModPathsIdentical();
             return false;
         }
         
         if (!Directory.Exists(baseGameDirectory))
         {
-            await onRootDirectoryNotFound(new RootDirectoryNotFoundErrorInfo(baseGameDirectory));
+            await errorHandler.OnRootDirectoryNotFound(new RootDirectoryNotFoundErrorInfo(baseGameDirectory));
             return false;
         }
 
@@ -29,7 +27,9 @@ internal static class RomFSLoading
         {
             if (!Directory.Exists(Path.Combine(baseGameDirectory, subDirectory)))
             {
-                await onMissingSubDirectory(new MissingSubDirectoryErrorInfo(baseGameDirectory, subDirectory));
+                await errorHandler.OnMissingSubDirectory(
+                    new MissingSubDirectoryErrorInfo(baseGameDirectory, subDirectory)
+                );
                 return false;
             } 
         }
@@ -37,7 +37,7 @@ internal static class RomFSLoading
         //Check if root directory for mod exists
         if (modDirectory != null && !Directory.Exists(modDirectory))
         {
-            await onRootDirectoryNotFound(new RootDirectoryNotFoundErrorInfo(modDirectory));
+            await errorHandler.OnRootDirectoryNotFound(new RootDirectoryNotFoundErrorInfo(modDirectory));
             return false;
         }
         return true;
@@ -46,10 +46,10 @@ internal static class RomFSLoading
     internal static async Task<string?> ResolveSystemFileLocation(string baseGameDirectory, string? modDirectory,
         RomFS.SystemFile kind,
         string[] fileLocation,
-        Func<MissingSystemFileErrorInfo, Task>? onMissingSystemFile)
+        IRomFSLoadingErrorHandler errorHandler)
     {
         string? filePath = await ResolveSystemFileLocation(baseGameDirectory, kind, fileLocation, 
-            onMissingSystemFile);
+            errorHandler);
             
         if (filePath == null)
             return null;
@@ -58,7 +58,7 @@ internal static class RomFSLoading
         {
             string? modFilePath = await ResolveSystemFileLocation(modDirectory, kind, fileLocation, 
                 //a missing system file in the mod directory is not an error so don't report it
-                onMissingSystemFile: null);
+                errorHandler, failOnMissingSystemFile: false);
             
             if (modFilePath != null)
                 filePath = modFilePath;
@@ -68,7 +68,7 @@ internal static class RomFSLoading
     
     internal static async Task<string?> ResolveSystemFileLocation(string rootDirectory, RomFS.SystemFile kind,
         string[] fileLocation,
-        Func<MissingSystemFileErrorInfo, Task>? onMissingSystemFile)
+        IRomFSLoadingErrorHandler errorHandler, bool failOnMissingSystemFile = true)
     {
         var directoryLocation = fileLocation.AsSpan(..^1);
         string fileNamePattern = fileLocation[^1];
@@ -77,9 +77,9 @@ internal static class RomFSLoading
         string directory = Path.Combine([rootDirectory, ..directoryLocation]);
         if (!Directory.Exists(directory))
         {
-            if (onMissingSystemFile != null)
+            if (failOnMissingSystemFile)
             {
-                await onMissingSystemFile(new MissingSystemFileErrorInfo(
+                await errorHandler.OnMissingSystemFile(new MissingSystemFileErrorInfo(
                     directory, fileNamePattern, 
                     kind, DirectoryExists: false));
             }
@@ -91,9 +91,9 @@ internal static class RomFSLoading
         //check if file exists
         if (filePath == null)
         {
-            if (onMissingSystemFile != null)
+            if (failOnMissingSystemFile)
             {
-                await onMissingSystemFile(new MissingSystemFileErrorInfo(
+                await errorHandler.OnMissingSystemFile(new MissingSystemFileErrorInfo(
                     directory, fileNamePattern, 
                     kind, DirectoryExists: true));
             }
