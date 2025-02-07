@@ -3,7 +3,7 @@ using Fushigi.Data.BymlSerialization;
 namespace Fushigi.Data.Files.GymlTypes;
 
 // Currently doesn't load anything, but it shouldn't be hard for it to do so
-public class AreaParam : SerializableBymlObject<AreaParam>
+public class AreaParam : GymlFile<AreaParam>
 {
     public static readonly string GymlTypeSuffix = "game__stage__AreaParam";
     public static readonly string[] DefaultSavePath = ["Stage", "AreaParam"];
@@ -19,10 +19,12 @@ public class AreaParam : SerializableBymlObject<AreaParam>
 
     protected override void Deserialize(Deserializer d)
     {
+        base.Deserialize(d);
     }
 
     protected override void Serialize(Serializer s)
     {
+        base.Serialize(s);
     }
 
     public class EnvPalette : SerializableBymlObject<EnvPalette>

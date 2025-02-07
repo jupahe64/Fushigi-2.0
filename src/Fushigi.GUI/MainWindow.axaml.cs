@@ -74,7 +74,10 @@ public partial class MainWindow : Window
             ["BancMapUnit", "Course001_Course.bcett.byml.zs"],
             onFileNotFound: (info) => throw new(), 
             onFileDecompressionFailed: (info) => throw new(), 
-            onFileReadFailed: (info) => throw new()
+            onFileReadFailed: (info) => throw new(),
+            onGymlTypeMismatch: (info) => throw new(),
+            onInvalidFileRefPath: (info) => throw new(),
+            onCyclicInheritance: (info) => throw new()
             );
     }
     public async void LoadGame(string baseGameRomFSPath, string? modRomFSPath)

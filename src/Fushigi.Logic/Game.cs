@@ -2,6 +2,7 @@
 using Fushigi.Data;
 using Fushigi.Data.Files;
 using Fushigi.Data.Files.GymlTypes;
+using Fushigi.Data.RomFSExtensions;
 
 namespace Fushigi.Logic;
 
@@ -35,7 +36,10 @@ public class Game
         string[] coursePath,
         Func<FilePathResolutionErrorInfo, Task> onFileNotFound, 
         Func<FileDecompressionErrorInfo, Task> onFileDecompressionFailed,
-        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed)
+        Func<FileFormatReaderErrorInfo, Task> onFileReadFailed,
+        Func<LoadedGymlTypeMismatchErrorInfo, Task> onGymlTypeMismatch,
+        Func<InvalidFileRefPathErrorInfo, Task> onInvalidFileRefPath,
+        Func<CyclicInheritanceErrorInfo, Task> onCyclicInheritance)
     {
         #region LoadCourse
         var (success, courseFile) = await _romFs.LoadFile(
@@ -50,28 +54,29 @@ public class Game
         #region Get Stage/AreaParams
         if (success && courseFile.StageParamPath != null)
         {
-            var stagePath = courseFile.StageParamPath.Split("/")[1..];
-            stagePath[^1] = stagePath[^1].Replace(".gyml", ".bgyml");
-            var (loadedStageParam, stageParam) = await _romFs.LoadFile(
-                stagePath,
-                FormatDescriptors.GetGymlFormat<StageParam>(), 
+            var (loadedStageParam, stageParam) = await _romFs.LoadGyml<StageParam>(
+                courseFile.StageParamPath, 
                 onFileNotFound, 
                 onFileDecompressionFailed, 
-                onFileReadFailed 
+                onFileReadFailed,
+                onGymlTypeMismatch,
+                onInvalidFileRefPath,
+                onCyclicInheritance
                 );
 
             if (loadedStageParam && stageParam.Components.ContainsKey("AreaParam"))
             {
-                var areaPath = ((string)stageParam.Components["AreaParam"]).Split("/")[1..];
-                areaPath[^1] = areaPath[^1].Replace(".gyml", ".bgyml");
+                var areaPath = (string)stageParam.Components["AreaParam"];
 
-                var (loadedAreaParam, areaParam) = await _romFs.LoadFile(
+                var (loadedAreaParam, areaParam) = await _romFs.LoadGyml<AreaParam>(
                     areaPath,
-                    FormatDescriptors.GetGymlFormat<AreaParam>(), 
                     onFileNotFound, 
                     onFileDecompressionFailed, 
-                    onFileReadFailed 
-                    );
+                    onFileReadFailed,
+                    onGymlTypeMismatch,
+                    onInvalidFileRefPath,
+                    onCyclicInheritance
+                );
             }
         }
         #endregion
@@ -85,7 +90,10 @@ public class Game
                 coursePath,
                 onFileNotFound, 
                 onFileDecompressionFailed, 
-                onFileReadFailed);
+                onFileReadFailed,
+                onGymlTypeMismatch,
+                onInvalidFileRefPath,
+                onCyclicInheritance);
         }
         #endregion
         return (success, courseFile);
