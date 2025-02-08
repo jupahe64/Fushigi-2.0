@@ -40,9 +40,9 @@ public class Game
                 courseFile.StageParamPath, 
                 errorHandler);
 
-            if (loadedStageParam && stageParam.Components.ContainsKey("AreaParam"))
+            if (loadedStageParam && stageParam.Components.AreaParam != null)
             {
-                var areaPath = (string)stageParam.Components["AreaParam"];
+                var areaPath = stageParam.Components.AreaParam;
 
                 var (loadedAreaParam, areaParam) = await _romFs.LoadGyml<AreaParam>(
                     areaPath,
