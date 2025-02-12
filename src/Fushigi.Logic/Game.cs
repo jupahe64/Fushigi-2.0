@@ -22,50 +22,14 @@ public class Game
         return (false, null);
     }
 
-    public async Task<(bool success, StageBcett? loadedStage)> LoadCourse(
-        string[] coursePath,
+    public Task<(bool success, WorldList? worldList)> LoadWorldList(
         IGymlFileLoadingErrorHandler errorHandler)
-    {
-        #region LoadCourse
-        var (success, courseFile) = await _romFs.LoadFile(
-            coursePath,
-            FormatDescriptors.GetBcettFormat<StageBcett>(), 
-            errorHandler);
-        #endregion
+        => WorldList.Load(_romFS, "Work/Stage/WorldList/WorldList.game__stage__WorldList.gyml", errorHandler);
 
-        #region Get Stage/AreaParams
-        if (success && courseFile.StageParamPath != null)
-        {
-            var (loadedStageParam, stageParam) = await _romFs.LoadGyml<StageParam>(
-                courseFile.StageParamPath, 
-                errorHandler);
-
-            if (loadedStageParam && stageParam.Components.AreaParam != null)
-            {
-                var areaPath = stageParam.Components.AreaParam;
-
-                var (loadedAreaParam, areaParam) = await _romFs.LoadGyml<AreaParam>(
-                    areaPath,
-                    errorHandler);
-            }
-        }
-        #endregion
-
-        #region Get Areas with RefStages
-        foreach (var stage in courseFile.RefStages ?? [])
-        {
-            var areaName = Regex.Match(stage, @"Course[^\.]*").Value;
-            coursePath[^1] = areaName + ".bcett.byml.zs";
-            var (loadedArea, area) = await LoadCourse(coursePath, errorHandler);
-        }
-        #endregion
-        return (success, courseFile);
-    }
-    
-    private readonly RomFS _romFs;
+    private readonly RomFS _romFS;
 
     private Game(RomFS romFs)
     {
-        _romFs = romFs;
+        _romFS = romFs;
     }
 }

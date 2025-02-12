@@ -69,7 +69,7 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         Debug.Write(settingsDialog.RomFSPath.Text);
     }
 
-    private class LoadCourseErrorHandler : IGymlFileLoadingErrorHandler
+    private class LoadWorldmapAndCourseErrorHandler : IGymlFileLoadingErrorHandler
     {
         public Task OnFileNotFound(FilePathResolutionErrorInfo info)
             => throw new System.NotImplementedException();
@@ -92,10 +92,14 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
 
     private async void Open_OnClick(object? sender, RoutedEventArgs e)
     {
+        var errorHandler = new LoadWorldmapAndCourseErrorHandler();
         //this is just for testing purposes
-        var (success, area) = await _loadedGame.LoadCourse(
-            ["BancMapUnit", "Course001_Course.bcett.byml.zs"],
-            new LoadCourseErrorHandler());
+        if (await _loadedGame!.LoadWorldList(errorHandler) 
+            is not (true, { } worldList)) return;
+        
+        if (await worldList!.Worlds[0].LoadCourse(0, errorHandler) 
+            is not (true, { } course)) return;
+        
     }
     
     public async void LoadGame(string baseGameRomFSPath, string? modRomFSPath)
