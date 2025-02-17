@@ -11,7 +11,7 @@ public class WorldList
 {
     public static async Task<(bool success, WorldList? muMap)> Load(
         RomFS romFS, string gymlPath,
-        IGymlFileLoadingErrorHandler errorHandler)
+        IStageLoadingErrorHandler errorHandler)
     {
         if (await romFS.LoadGyml<GymlTypes.WorldList>(gymlPath, errorHandler)
             is not (true, { } worldListGyml)) return (false, null);

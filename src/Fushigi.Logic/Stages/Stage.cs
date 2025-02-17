@@ -5,6 +5,12 @@ using Fushigi.Data.RomFSExtensions;
 
 namespace Fushigi.Logic.Stages;
 
+public interface IStageLoadingErrorHandler
+: IGymlFileLoadingErrorHandler, IStageBcettFileLoadingErrorHandler
+{
+    
+}
+
 public abstract class Stage
 {
     public MuMap MuMap => _baseInfo.MuMap;
@@ -27,7 +33,7 @@ public abstract class Stage
     
     protected static async Task<(bool success, StageBaseInfo loadedInfo)> Load(
         RomFS romFS, string stageParamGymlPath,
-        IGymlFileLoadingErrorHandler errorHandler)
+        IStageLoadingErrorHandler errorHandler)
     {
         if (await romFS.LoadGyml<StageParam>(stageParamGymlPath, errorHandler)
             is not (true, { } stageParam)) return (false, default);

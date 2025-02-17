@@ -7,16 +7,16 @@ namespace Fushigi.Logic.Stages;
 public sealed class MuMap
 {
     public static async Task<(bool success, MuMap? muMap)> Load(
-        RomFS romFS, string mumapPath,
-        IGymlFileLoadingErrorHandler errorHandler)
+        RomFS romFS, string muMapPath,
+        IStageBcettFileLoadingErrorHandler errorHandler)
     {
-        if (await FileRefPathConversion.GetRomFSFilePath(mumapPath, (".mumap", ".bcett.byml.zs"), errorHandler)
+        if (await FileRefPathConversion.GetRomFSFilePath(muMapPath, (".mumap", ".bcett.byml.zs"), errorHandler)
                 is not (true, { } bcettPath)) return (false, null);
         
-        if (await romFS.LoadFile(bcettPath, FormatDescriptors.GetBcettFormat<StageBcett>(), errorHandler)
+        if (await romFS.LoadStageBcett(bcettPath, errorHandler)
                 is not (true, { } stageBcett)) return (false, null);
         
-        var muMap = new MuMap(mumapPath, stageBcett);
+        var muMap = new MuMap(muMapPath, stageBcett);
         
         return (true, muMap);
     }

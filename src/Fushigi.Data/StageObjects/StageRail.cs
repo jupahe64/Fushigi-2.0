@@ -10,48 +10,48 @@ public class StageRail : SerializableBymlObject<StageRail>
     public ulong Hash;
     public string Gyaml = null!;
     public bool IsClosed;
-    public PropertyDict Dynamic = null!;
+    public PropertyDict Dynamic = PropertyDict.Empty;
 
-    protected override void Deserialize(Deserializer d)
+    protected override void Deserialize(ISerializationContext ctx)
     {
-        d.SetArray(ref Points, "Points", RailPoint.Conversion);
-        d.SetUInt32(ref AreaHash, "AreaHash");
-        d.SetUInt64(ref Hash, "Hash");
-        d.SetString(ref Gyaml, "Gyaml");
-        d.SetBool(ref IsClosed, "IsClosed");
-        d.SetValue(ref Dynamic, "Dynamic", SpecialConversions.PropertyDict);
+        ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
+        ctx.Set(UINT32, ref AreaHash, "AreaHash");
+        ctx.Set(UINT64, ref Hash, "Hash");
+        ctx.Set(STRING, ref Gyaml, "Gyaml");
+        ctx.Set(BOOL, ref IsClosed, "IsClosed");
+        ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
     }
 
-    protected override void Serialize(Serializer s)
+    protected override void Serialize(ISerializationContext ctx)
     {
-        s.SetArray(ref Points, "Points", RailPoint.Conversion);
-        s.SetUInt32(ref AreaHash, "AreaHash");
-        s.SetUInt64(ref Hash, "Hash");
-        s.SetString(ref Gyaml, "Gyaml");
-        s.SetBool(ref IsClosed, "IsClosed");
-        s.SetValue(ref Dynamic, "Dynamic", SpecialConversions.PropertyDict);
+        ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
+        ctx.Set(UINT32, ref AreaHash, "AreaHash");
+        ctx.Set(UINT64, ref Hash, "Hash");
+        ctx.Set(STRING, ref Gyaml, "Gyaml");
+        ctx.Set(BOOL, ref IsClosed, "IsClosed");
+        ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
     }
 }
 public class RailPoint : SerializableBymlObject<RailPoint>
 {
     public ulong Hash;
-    public PropertyDict Dynamic = null!;
+    public PropertyDict Dynamic = PropertyDict.Empty;
     public Vector3 Translate;
-    public Vector3 CurveControl;
+    public Vector3? CurveControl;
 
-    protected override void Deserialize(Deserializer d)
+    protected override void Deserialize(ISerializationContext ctx)
     {
-        d.SetUInt64(ref Hash, "Hash", true);
-        d.SetValue(ref Dynamic, "Dynamic", SpecialConversions.PropertyDict);
-        d.SetValue(ref Translate, "Translate", SpecialConversions.Float3);
-        d.SetValue(ref CurveControl, "Control1", SpecialConversions.Float3);
+        ctx.Set(UINT64, ref Hash, "Hash", optional: true);
+        ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
+        ctx.Set(FLOAT3, ref Translate, "Translate");
+        ctx.Set(FLOAT3, ref CurveControl, "Control1", optional: true);
     }
 
-    protected override void Serialize(Serializer s)
+    protected override void Serialize(ISerializationContext ctx)
     {
-        s.SetUInt64(ref Hash, "Hash", true);
-        s.SetValue(ref Dynamic, "Dynamic", SpecialConversions.PropertyDict);
-        s.SetValue(ref Translate, "Translate", SpecialConversions.Float3);
-        s.SetValue(ref CurveControl, "Control1", SpecialConversions.Float3);
+        ctx.Set(UINT64, ref Hash, "Hash", optional: true);
+        ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
+        ctx.Set(FLOAT3, ref Translate, "Translate");
+        ctx.Set(FLOAT3, ref CurveControl, "Control1", optional: true);
     }
 }

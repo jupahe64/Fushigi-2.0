@@ -6,7 +6,7 @@ namespace Fushigi.Logic.Stages;
 public class Course : Stage
 {
     public new static async Task<(bool success, Course? course)> Load(RomFS romFS, string stageParamGymlPath,
-        IGymlFileLoadingErrorHandler errorHandler)
+        IStageLoadingErrorHandler errorHandler)
     {
         if (await Stage.Load(romFS, stageParamGymlPath, errorHandler)
             is not (true, var baseInfo)) return (false, default);

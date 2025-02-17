@@ -9,14 +9,14 @@ public abstract class GymlFile<T> : SerializableBymlObject<T>
     
     private T? _parent;
     private string? _parentGymlRefString;
-    protected override void Deserialize(Deserializer d)
+    protected override void Deserialize(ISerializationContext ctx)
     {
-        d.SetString(ref _parentGymlRefString!, "$parent", optional: true);
+        ctx.Set(STRING, ref _parentGymlRefString!, "$parent", optional: true);
     }
     
-    protected override void Serialize(Serializer d)
+    protected override void Serialize(ISerializationContext d)
     {
-        d.SetString(ref _parentGymlRefString!, "$parent", optional: true);
+        d.Set(STRING, ref _parentGymlRefString!, "$parent", optional: true);
     }
     
     internal string? ParentGymlRefString => _parentGymlRefString;

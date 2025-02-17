@@ -9,28 +9,28 @@ public class WorldMapInfo : GymlFile<WorldMapInfo>
     {
         public string Key = null!;
         public string StagePath = null!;
-        protected override void Deserialize(Deserializer d)
+        protected override void Deserialize(ISerializationContext ctx)
         {
-            d.SetString(ref Key, "Key");
-            d.SetString(ref StagePath, "StagePath");
+            ctx.Set(STRING, ref Key, "Key");
+            ctx.Set(STRING, ref StagePath, "StagePath");
         }
 
-        protected override void Serialize(Serializer s)
+        protected override void Serialize(ISerializationContext ctx)
         {
-            s.SetString(ref Key, "Key");
-            s.SetString(ref StagePath, "StagePath");
+            ctx.Set(STRING, ref Key, "Key");
+            ctx.Set(STRING, ref StagePath, "StagePath");
         }
     }
     
-    protected override void Deserialize(Deserializer d)
+    protected override void Deserialize(ISerializationContext ctx)
     {
-        base.Deserialize(d);
-        d.SetArray(ref CourseTable, "CourseTable", CourseTableEntry.Conversion);
+        base.Deserialize(ctx);
+        ctx.SetArray(ref CourseTable, "CourseTable", CourseTableEntry.Conversion);
     }
 
-    protected override void Serialize(Serializer s)
+    protected override void Serialize(ISerializationContext ctx)
     {
-        base.Serialize(s);
-        s.SetArray(ref CourseTable, "CourseTable", CourseTableEntry.Conversion);
+        base.Serialize(ctx);
+        ctx.SetArray(ref CourseTable, "CourseTable", CourseTableEntry.Conversion);
     }
 }

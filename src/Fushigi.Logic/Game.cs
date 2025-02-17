@@ -1,8 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using Fushigi.Data;
-using Fushigi.Data.Files;
-using Fushigi.Data.Files.GymlTypes;
-using Fushigi.Data.RomFSExtensions;
+﻿using Fushigi.Data;
+using Fushigi.Logic.Stages;
 
 namespace Fushigi.Logic;
 
@@ -23,7 +20,7 @@ public class Game
     }
 
     public Task<(bool success, WorldList? worldList)> LoadWorldList(
-        IGymlFileLoadingErrorHandler errorHandler)
+        IStageLoadingErrorHandler errorHandler)
         => WorldList.Load(_romFS, "Work/Stage/WorldList/WorldList.game__stage__WorldList.gyml", errorHandler);
 
     private readonly RomFS _romFS;

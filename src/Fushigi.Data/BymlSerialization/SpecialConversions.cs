@@ -8,17 +8,27 @@ public static class SpecialConversions
 {
     #region Float3
 
-    public static readonly BymlConversion<Vector3> Float3 = new(ParseFloat3, SerializeFloat3);
-    public static Vector3 ParseFloat3(Byml node)
+    public static readonly BymlConversion<Vector3> Float3 = 
+        new(BymlNodeType.Array, DeserializeFloat3, SerializeFloat3);
+    
+    private static Vector3 DeserializeFloat3(Deserializer deserializer)
     {
-        var array = node.GetArray();
-        return new Vector3(
-            array[0].GetFloat(),
-            array[1].GetFloat(),
-            array[2].GetFloat()
-            );
+        Vector3 vec = default;
+        deserializer.Set(Conversions.Float, ref vec.X, 0);
+        deserializer.Set(Conversions.Float, ref vec.Y, 1);
+        deserializer.Set(Conversions.Float, ref vec.Z, 2);
+        return vec;
     }
-    public static Byml SerializeFloat3(Vector3 value)
+    private static Byml SerializeFloat3(Vector3 value, Serializer serializer)
+    {
+        return new Byml([
+            new Byml(value.X),
+            new Byml(value.Y),
+            new Byml(value.Z)
+        ]);
+    }
+    // for PropertyDict
+    private static Byml SerializeFloat3(Vector3 value)
     {
         return new Byml([
             new Byml(value.X),
@@ -29,18 +39,19 @@ public static class SpecialConversions
     #endregion
 
     #region Vector3
-    public static readonly BymlConversion<Vector3> Vector3D = new(ParseVector3D, SerializeVector3D);
-    public static Vector3 ParseVector3D(Byml node)
+    public static readonly BymlConversion<Vector3> Vector3D = 
+        new(BymlNodeType.Map, DeserializeVector3D, SerializeVector3D);
+    
+    private static Vector3 DeserializeVector3D(Deserializer deserializer)
     {
-        var map = node.GetMap();
-        return new Vector3(
-            map["X"].GetFloat(),
-            map["Y"].GetFloat(),
-            map["Z"].GetFloat()
-            );
+        Vector3 vec = default;
+        deserializer.Set(Conversions.Float, ref vec.X, "X");
+        deserializer.Set(Conversions.Float, ref vec.Y, "Y");
+        deserializer.Set(Conversions.Float, ref vec.Z, "Z");
+        return vec;
     }
 
-    public static Byml SerializeVector3D(Vector3 value)
+    private static Byml SerializeVector3D(Vector3 value, Serializer serializer)
     {
         return new Byml(new BymlMap
         {
@@ -52,14 +63,30 @@ public static class SpecialConversions
     #endregion
 
     #region PropertyDict
-    public static readonly BymlConversion<PropertyDict> PropertyDict = new(ParsePropertyDict, SerializePropertyDict);
-    public static PropertyDict ParsePropertyDict(Byml node)
+    public static readonly BymlConversion<PropertyDict> PropertyDict = 
+        new(BymlNodeType.Map, DeserializePropertyDict, SerializePropertyDict);
+
+    private static PropertyDict DeserializePropertyDict(Deserializer deserializer)
     {
-        var map = node.GetMap();
+        var map = deserializer.GetNode().GetMap();
 
         List<PropertyDict.Entry> entries = [];
         foreach (var (key, value) in map)
         {
+            Vector3 ParseFloat3()
+            {
+                //a bit hacky but it's the simplest way to ensure errors are handled
+                Vector3 vec = default;
+                deserializer.Set(Float3, ref vec, key);
+                return vec;
+            }
+            
+            object HandleUnexpected()
+            {
+                deserializer.ReportUnexpectedType();
+                return null!;
+            }
+            
             object parsed = value.Type switch
             {
                 BymlNodeType.String => value.GetString(),
@@ -70,9 +97,9 @@ public static class SpecialConversions
                 BymlNodeType.UInt64 => value.GetUInt64(),
                 BymlNodeType.Float => value.GetFloat(),
                 BymlNodeType.Double => value.GetDouble(),
-                BymlNodeType.Array => ParseFloat3(value),
+                BymlNodeType.Array => ParseFloat3(),
                 BymlNodeType.Null => null!,
-                _ => throw new Exception($"Unexpected node type {value.Type}"),
+                _ => HandleUnexpected(),
             };
 
             entries.Add(new(key, parsed));
@@ -81,7 +108,7 @@ public static class SpecialConversions
         return new PropertyDict(entries);
     }
 
-    public static Byml SerializePropertyDict(PropertyDict dict)
+    private static Byml SerializePropertyDict(PropertyDict dict, Serializer serializer)
     {
         var map = new BymlMap();
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -5,10 +6,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using BymlLibrary;
 using Fushigi.Data;
+using Fushigi.Data.BymlSerialization;
 using Fushigi.Data.Files;
 using Fushigi.Data.RomFSExtensions;
 using Fushigi.Logic;
+using Fushigi.Logic.Stages;
 
 namespace Fushigi.GUI;
 
@@ -69,7 +73,7 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         Debug.Write(settingsDialog.RomFSPath.Text);
     }
 
-    private class LoadWorldmapAndCourseErrorHandler : IGymlFileLoadingErrorHandler
+    private class LoadWorldmapAndCourseErrorHandler : IStageLoadingErrorHandler
     {
         public Task OnFileNotFound(FilePathResolutionErrorInfo info)
             => throw new System.NotImplementedException();
@@ -87,6 +91,12 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
             => throw new System.NotImplementedException();
 
         public Task OnCyclicInheritance(CyclicInheritanceErrorInfo info)
+            => throw new System.NotImplementedException();
+
+        public Task OnUnexpectedRootType(UnexpectedRootTypeErrorInfo info) 
+            => throw new System.NotImplementedException();
+
+        public Task OnContentErrorsFound(IReadOnlyDictionary<Byml, BymlContentErrorInfo> errors) 
             => throw new System.NotImplementedException();
     }
 

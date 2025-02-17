@@ -20,30 +20,30 @@ public class StageBcett : SerializableBymlObject<StageBcett>
     public List<SimultaneousGroup> SimultaneousGroups = null!;
     public List<string> RefStages = null!;
     
-    protected override void Deserialize(Deserializer d)
+    protected override void Deserialize(ISerializationContext ctx)
     {
-        d.SetUInt32(ref RootAreaHash, "RootAreaHash");
-        d.SetString(ref StageParamPath, "StageParam");
-        d.SetArray(ref Actors, "Actors", StageActor.Conversion);
-        d.SetArray(ref Rails, "Rails", StageRail.Conversion, true);
-        d.SetArray(ref BgUnits, "BgUnits", CourseBgUnit.Conversion, true);
-        d.SetArray(ref Links, "Links", CourseLink.Conversion, true);
-        d.SetArray(ref ActorToRailLinks, "ActorToRailLinks", CourseLink.Conversion, true);
-        d.SetArray(ref SimultaneousGroups, "SimultaneousGroups", SimultaneousGroup.Conversion, true);
-        d.SetArray(ref RefStages, "RefStages", d.ConvertString, true);
+        ctx.Set(UINT32, ref RootAreaHash, "RootAreaHash");
+        ctx.Set(STRING, ref StageParamPath, "StageParam");
+        ctx.SetArray(ref Actors, "Actors", StageActor.Conversion);
+        ctx.SetArray(ref Rails, "Rails", StageRail.Conversion, optional: true);
+        ctx.SetArray(ref BgUnits, "BgUnits", CourseBgUnit.Conversion, optional: true);
+        ctx.SetArray(ref Links, "Links", CourseLink.Conversion, optional: true);
+        ctx.SetArray(ref ActorToRailLinks, "ActorToRailLinks", CourseLink.Conversion, optional: true);
+        ctx.SetArray(ref SimultaneousGroups, "SimultaneousGroups", SimultaneousGroup.Conversion, optional: true);
+        ctx.SetArray(ref RefStages, "RefStages", STRING, optional: true);
     }
 
-    protected override void Serialize(Serializer s)
+    protected override void Serialize(ISerializationContext ctx)
     {
-        s.SetUInt32(ref RootAreaHash, "RootAreaHash");
-        s.SetString(ref StageParamPath, "StageParam");
-        s.SetArray(ref Actors, "Actors", StageActor.Conversion);
-        s.SetArray(ref Rails, "Rails", StageRail.Conversion, true);
-        s.SetArray(ref BgUnits, "BgUnits", CourseBgUnit.Conversion, true);
-        s.SetArray(ref Links, "Links", CourseLink.Conversion, true);
-        s.SetArray(ref ActorToRailLinks, "ActorToRailLinks", CourseLink.Conversion, true);
-        s.SetArray(ref SimultaneousGroups, "SimultaneousGroups", SimultaneousGroup.Conversion, true);
-        s.SetArray(ref RefStages, "RefStages", s.ConvertString, true);
+        ctx.Set(UINT32, ref RootAreaHash, "RootAreaHash");
+        ctx.Set(STRING, ref StageParamPath, "StageParam");
+        ctx.SetArray(ref Actors, "Actors", StageActor.Conversion);
+        ctx.SetArray(ref Rails, "Rails", StageRail.Conversion, optional: true);
+        ctx.SetArray(ref BgUnits, "BgUnits", CourseBgUnit.Conversion, optional: true);
+        ctx.SetArray(ref Links, "Links", CourseLink.Conversion, optional: true);
+        ctx.SetArray(ref ActorToRailLinks, "ActorToRailLinks", CourseLink.Conversion, optional: true);
+        ctx.SetArray(ref SimultaneousGroups, "SimultaneousGroups", SimultaneousGroup.Conversion, optional: true);
+        ctx.SetArray(ref RefStages, "RefStages", STRING, optional: true);
     }
 
     public class CourseLink : SerializableBymlObject<CourseLink>
@@ -53,20 +53,20 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         public ulong Point;
         public string LinkType = null!;
 
-        protected override void Deserialize(Deserializer d)
+        protected override void Deserialize(ISerializationContext ctx)
         {
-            d.SetUInt64(ref Destination, "Dst");
-            d.SetUInt64(ref Source, "Src");
-            d.SetString(ref LinkType, "Name");
-            d.SetUInt64(ref Point, "Point", true);
+            ctx.Set(UINT64, ref Destination, "Dst");
+            ctx.Set(UINT64, ref Source, "Src");
+            ctx.Set(STRING, ref LinkType, "Name");
+            ctx.Set(UINT64, ref Point, "Point", optional: true);
         }
 
-        protected override void Serialize(Serializer s)
+        protected override void Serialize(ISerializationContext ctx)
         {
-            s.SetUInt64(ref Destination, "Dst");
-            s.SetUInt64(ref Source, "Src");
-            s.SetString(ref LinkType, "Name");
-            s.SetUInt64(ref Point, "Point", true);
+            ctx.Set(UINT64, ref Destination, "Dst");
+            ctx.Set(UINT64, ref Source, "Src");
+            ctx.Set(STRING, ref LinkType, "Name");
+            ctx.Set(UINT64, ref Point, "Point", optional: true);
         }
     }
 
@@ -75,16 +75,16 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         public ulong Hash;
         public List<ulong> Actors = null!;
 
-        protected override void Deserialize(Deserializer d)
+        protected override void Deserialize(ISerializationContext ctx)
         {
-            d.SetUInt64(ref Hash, "Hash");
-            d.SetArray(ref Actors, "Actors", d.ConvertUInt64);
+            ctx.Set(UINT64, ref Hash, "Hash");
+            ctx.SetArray(ref Actors, "Actors", UINT64);
         }
 
-        protected override void Serialize(Serializer s)
+        protected override void Serialize(ISerializationContext ctx)
         {
-            s.SetUInt64(ref Hash, "Hash");
-            s.SetArray(ref Actors, "Actors", s.ConvertUInt64);
+            ctx.Set(UINT64, ref Hash, "Hash");
+            ctx.SetArray(ref Actors, "Actors", UINT64);
         }
     }
 }

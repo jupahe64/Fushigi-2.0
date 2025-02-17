@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Fushigi.Data.BymlSerialization;
 using Fushigi.Data.Files;
 using Fushigi.Data.Files.GymlTypes;
 
@@ -7,7 +8,10 @@ namespace Fushigi.Data.RomFSExtensions;
 public record LoadedGymlTypeMismatchErrorInfo(string GymlPath, Type Expected, Type AlreadyLoaded);
 public record CyclicInheritanceErrorInfo(string[] InheritanceCycle);
 
-public interface IGymlFileLoadingErrorHandler : IFileResolutionAndLoadingErrorHandler, IFileRefPathErrorHandler
+public interface IGymlFileLoadingErrorHandler : 
+    IFileResolutionAndLoadingErrorHandler, 
+    IBymlDeserializeErrorHandler,
+    IFileRefPathErrorHandler
 {
     Task OnGymlTypeMismatch(LoadedGymlTypeMismatchErrorInfo info);
     Task OnCyclicInheritance(CyclicInheritanceErrorInfo info);
@@ -63,10 +67,16 @@ public static class RomFSGymlLoadingExtension
                 return (false, null);
             }
             
-            if (await romFS.LoadFile(filePath, FormatDescriptors.GetGymlFormat<T>(), 
+            if (await romFS.LoadFile(filePath, FormatDescriptors.BymlUncompressed, 
                     errorHandler, 
                     pack
-                ) is not (true, {} loadedGyml))
+                ) is not (true, {} loadedByml))
+            {
+                return (false, null);
+            }
+            
+            if (await GymlFile<T>.DeserializeFrom(loadedByml, errorHandler)
+                is not (true, { } loadedGyml))
             {
                 return (false, null);
             }

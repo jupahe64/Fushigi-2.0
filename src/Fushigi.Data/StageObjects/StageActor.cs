@@ -10,34 +10,34 @@ public class StageActor : SerializableBymlObject<StageActor>
     public string Gyaml = null!;
     public string Name = null!;
     public string Layer = null!;
-    public PropertyDict Dynamic = null!;
+    public PropertyDict Dynamic = PropertyDict.Empty;
     public Vector3 Rotate;
     public Vector3 Scale;
     public Vector3 Translate;
 
-    protected override void Deserialize(Deserializer d)
+    protected override void Deserialize(ISerializationContext ctx)
     {
-        d.SetUInt32(ref AreaHash, "AreaHash");
-        d.SetUInt64(ref Hash, "Hash");
-        d.SetString(ref Gyaml, "Gyaml");
-        d.SetString(ref Name, "Name");
-        d.SetString(ref Layer, "Layer");
-        d.SetValue(ref Dynamic, "Dynamic", SpecialConversions.PropertyDict);
-        d.SetValue(ref Rotate, "Rotate", SpecialConversions.Float3);
-        d.SetValue(ref Scale, "Scale", SpecialConversions.Float3);
-        d.SetValue(ref Translate, "Translate", SpecialConversions.Float3);
+        ctx.Set(UINT32, ref AreaHash, "AreaHash");
+        ctx.Set(UINT64, ref Hash, "Hash");
+        ctx.Set(STRING, ref Gyaml, "Gyaml");
+        ctx.Set(STRING, ref Name, "Name");
+        ctx.Set(STRING, ref Layer, "Layer");
+        ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
+        ctx.Set(FLOAT3, ref Rotate, "Rotate");
+        ctx.Set(FLOAT3, ref Scale, "Scale");
+        ctx.Set(FLOAT3, ref Translate, "Translate");
     }
 
-    protected override void Serialize(Serializer s)
+    protected override void Serialize(ISerializationContext ctx)
     {
-        s.SetUInt32(ref AreaHash, "AreaHash");
-        s.SetUInt64(ref Hash, "Hash");
-        s.SetString(ref Gyaml, "Gyaml");
-        s.SetString(ref Name, "Name");
-        s.SetString(ref Layer, "Layer");
-        s.SetValue(ref Dynamic, "Dynamic", SpecialConversions.PropertyDict);
-        s.SetValue(ref Rotate, "Rotate", SpecialConversions.Float3);
-        s.SetValue(ref Scale, "Scale", SpecialConversions.Float3);
-        s.SetValue(ref Translate, "Translate", SpecialConversions.Float3);
+        ctx.Set(UINT32, ref AreaHash, "AreaHash");
+        ctx.Set(UINT64, ref Hash, "Hash");
+        ctx.Set(STRING, ref Gyaml, "Gyaml");
+        ctx.Set(STRING, ref Name, "Name");
+        ctx.Set(STRING, ref Layer, "Layer");
+        ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
+        ctx.Set(FLOAT3, ref Rotate, "Rotate");
+        ctx.Set(FLOAT3, ref Scale, "Scale");
+        ctx.Set(FLOAT3, ref Translate, "Translate");
     }
 }
