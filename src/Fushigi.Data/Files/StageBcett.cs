@@ -20,7 +20,7 @@ public class StageBcett : SerializableBymlObject<StageBcett>
     public List<SimultaneousGroup> SimultaneousGroups = null!;
     public List<string> RefStages = null!;
     
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         ctx.Set(UINT32, ref RootAreaHash, "RootAreaHash");
         ctx.Set(STRING, ref StageParamPath, "StageParam");
@@ -33,7 +33,7 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         ctx.SetArray(ref RefStages, "RefStages", STRING, optional: true);
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         ctx.Set(UINT32, ref RootAreaHash, "RootAreaHash");
         ctx.Set(STRING, ref StageParamPath, "StageParam");
@@ -53,7 +53,7 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         public ulong Point;
         public string LinkType = null!;
 
-        protected override void Deserialize(ISerializationContext ctx)
+        protected override void Deserialize<TContext>(TContext ctx)
         {
             ctx.Set(UINT64, ref Destination, "Dst");
             ctx.Set(UINT64, ref Source, "Src");
@@ -61,7 +61,7 @@ public class StageBcett : SerializableBymlObject<StageBcett>
             ctx.Set(UINT64, ref Point, "Point", optional: true);
         }
 
-        protected override void Serialize(ISerializationContext ctx)
+        protected override void Serialize<TContext>(TContext ctx)
         {
             ctx.Set(UINT64, ref Destination, "Dst");
             ctx.Set(UINT64, ref Source, "Src");
@@ -75,13 +75,13 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         public ulong Hash;
         public List<ulong> Actors = null!;
 
-        protected override void Deserialize(ISerializationContext ctx)
+        protected override void Deserialize<TContext>(TContext ctx)
         {
             ctx.Set(UINT64, ref Hash, "Hash");
             ctx.SetArray(ref Actors, "Actors", UINT64);
         }
 
-        protected override void Serialize(ISerializationContext ctx)
+        protected override void Serialize<TContext>(TContext ctx)
         {
             ctx.Set(UINT64, ref Hash, "Hash");
             ctx.SetArray(ref Actors, "Actors", UINT64);

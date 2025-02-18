@@ -16,7 +16,7 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
     public List<Wall> Walls = null!;
     public List<BgUnitRail> BeltRails = null!;
 
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         int type = 0;
         ctx.Set(INT32, ref type, "ModelType");
@@ -26,7 +26,7 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
         ctx.SetArray(ref BeltRails, "BeltRails", BgUnitRail.Conversion, true);
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         int type = (int)ModelType;
         ctx.Set(INT32, ref type, "ModelType");
@@ -40,12 +40,12 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
     {
         public BgUnitRail ExternalRail = null!;
         public List<BgUnitRail> InternalRails = null!;
-        protected override void Deserialize(ISerializationContext ctx)
+        protected override void Deserialize<TContext>(TContext ctx)
         {
             ctx.SetObject(ref ExternalRail, "ExternalRail");
             ctx.SetArray(ref InternalRails, "InternalRails", BgUnitRail.Conversion, true);
         }
-        protected override void Serialize(ISerializationContext ctx)
+        protected override void Serialize<TContext>(TContext ctx)
         {
             ctx.SetObject(ref ExternalRail, "ExternalRail");
             ctx.SetArray(ref InternalRails, "InternalRails", BgUnitRail.Conversion, true);
@@ -56,12 +56,12 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
         public List<RailPoint> Points = null!;
         public bool IsClosed;
 
-        protected override void Deserialize(ISerializationContext ctx)
+        protected override void Deserialize<TContext>(TContext ctx)
         {
             ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
             ctx.Set(BOOL, ref IsClosed, "IsClosed");
         }
-        protected override void Serialize(ISerializationContext ctx)
+        protected override void Serialize<TContext>(TContext ctx)
         {
             ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
             ctx.Set(BOOL, ref IsClosed, "IsClosed");

@@ -27,12 +27,10 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
         return obj;
     }
     
-    private static Byml SerializeFunc(T obj, Serializer serializer)
+    private static Byml SerializeFunc(T obj)
     {
         obj._map ??= [];
-        if (!serializer.TryGetBaseNode(BymlNodeType.Map, out _))
-            serializer.SetBaseNode(obj._map);
-        obj.Serialize(serializer);
+        obj.Serialize(new Serializer(obj._map));
         return new Byml(obj._map!);
     }
 
@@ -59,8 +57,8 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     protected readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
     // ReSharper restore InconsistentNaming
     
-    protected abstract void Deserialize(ISerializationContext ctx);
-    protected abstract void Serialize(ISerializationContext ctx);
+    protected abstract void Deserialize<TContext>(TContext ctx) where TContext : struct, ISerializationContext;
+    protected abstract void Serialize<TContext>(TContext ctx) where TContext : struct, ISerializationContext;
     
     private BymlMap? _map;
 }

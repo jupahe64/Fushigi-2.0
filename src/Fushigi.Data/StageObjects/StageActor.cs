@@ -15,7 +15,7 @@ public class StageActor : SerializableBymlObject<StageActor>
     public Vector3 Scale;
     public Vector3 Translate;
 
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         ctx.Set(UINT32, ref AreaHash, "AreaHash");
         ctx.Set(UINT64, ref Hash, "Hash");
@@ -28,7 +28,7 @@ public class StageActor : SerializableBymlObject<StageActor>
         ctx.Set(FLOAT3, ref Translate, "Translate");
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         ctx.Set(UINT32, ref AreaHash, "AreaHash");
         ctx.Set(UINT64, ref Hash, "Hash");

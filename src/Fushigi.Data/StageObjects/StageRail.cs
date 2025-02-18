@@ -12,7 +12,7 @@ public class StageRail : SerializableBymlObject<StageRail>
     public bool IsClosed;
     public PropertyDict Dynamic = PropertyDict.Empty;
 
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
         ctx.Set(UINT32, ref AreaHash, "AreaHash");
@@ -22,7 +22,7 @@ public class StageRail : SerializableBymlObject<StageRail>
         ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
         ctx.Set(UINT32, ref AreaHash, "AreaHash");
@@ -39,7 +39,7 @@ public class RailPoint : SerializableBymlObject<RailPoint>
     public Vector3 Translate;
     public Vector3? CurveControl;
 
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         ctx.Set(UINT64, ref Hash, "Hash", optional: true);
         ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);
@@ -47,7 +47,7 @@ public class RailPoint : SerializableBymlObject<RailPoint>
         ctx.Set(FLOAT3, ref CurveControl, "Control1", optional: true);
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         ctx.Set(UINT64, ref Hash, "Hash", optional: true);
         ctx.Set(PROPERTY_DICT, ref Dynamic, "Dynamic", optional: true);

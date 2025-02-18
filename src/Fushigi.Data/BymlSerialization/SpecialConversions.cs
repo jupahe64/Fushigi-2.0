@@ -51,7 +51,7 @@ public static class SpecialConversions
         return vec;
     }
 
-    private static Byml SerializeVector3D(Vector3 value, Serializer serializer)
+    private static Byml SerializeVector3D(Vector3 value)
     {
         return new Byml(new BymlMap
         {
@@ -108,13 +108,13 @@ public static class SpecialConversions
         return new PropertyDict(entries);
     }
 
-    private static Byml SerializePropertyDict(PropertyDict dict, Serializer serializer)
+    private static Byml SerializePropertyDict(PropertyDict dict)
     {
         var map = new BymlMap();
 
         foreach (var entry in dict)
         {
-            Byml serialized = entry.Value switch
+            var serialized = entry.Value switch
             {
                 string v => new Byml(v),
                 bool v => new Byml(v),

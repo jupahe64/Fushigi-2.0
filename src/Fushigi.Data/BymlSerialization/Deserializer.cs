@@ -22,19 +22,19 @@ public interface IBymlDeserializeErrorHandler
     Task OnContentErrorsFound(IReadOnlyDictionary<Byml, BymlContentErrorInfo> errors);
 }
 
-public class Deserializer : ISerializationContext
+public readonly struct Deserializer : ISerializationContext
 {
     public static async Task<(bool success, T value)> Deserialize<T>(Byml byml, Func<Deserializer, T> deserializeFunc,
         IBymlDeserializeErrorHandler errorHandler)
     {
-        if (byml.Value is not BymlMap root)
+        if (byml.Value is not BymlMap)
         {
             await errorHandler.OnUnexpectedRootType(new UnexpectedRootTypeErrorInfo(BymlNodeType.Map, byml.Type));
             return (false, default!);
         }
         
         var contentErrors = new Dictionary<Byml, BymlContentErrorInfo>();
-        var deserializer = new Deserializer(root, contentErrors);
+        var deserializer = new Deserializer(byml, contentErrors);
 
         var deserializedObject = deserializeFunc(deserializer);
 
@@ -47,12 +47,12 @@ public class Deserializer : ISerializationContext
         return (true, deserializedObject);
     }
     
-    private Byml _node;
+    private readonly Byml _node;
     private readonly Dictionary<Byml, BymlContentErrorInfo> _contentErrors;
 
-    private Deserializer(BymlMap map, Dictionary<Byml, BymlContentErrorInfo> contentErrors)
+    private Deserializer(Byml node, Dictionary<Byml, BymlContentErrorInfo> contentErrors)
     {
-        _node = map;
+        _node = node;
         _contentErrors = contentErrors;
     }
 
@@ -117,10 +117,7 @@ public class Deserializer : ISerializationContext
         if (Retrieve(conversion.RequiredNodeType, idx) is not (true, {} node))
             return; //errors (if any) have been reported, nothing to do here
 
-        var before = _node;
-        _node = node;
-        value = conversion.Deserialize(this);
-        _node = before; 
+        value = conversion.Deserialize(new Deserializer(node, _contentErrors));
     }
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue value, string key, 
         bool optional = false)
@@ -128,10 +125,7 @@ public class Deserializer : ISerializationContext
         if (Retrieve(conversion.RequiredNodeType, key, optional) is not (true, {} node))
             return; //errors (if any) have been reported, nothing to do here
 
-        var before = _node;
-        _node = node;
-        value = conversion.Deserialize(this);
-        _node = before; 
+        value = conversion.Deserialize(new Deserializer(node, _contentErrors));
     }
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue? value, string key, 
         bool optional = false)
@@ -140,10 +134,7 @@ public class Deserializer : ISerializationContext
         if (Retrieve(conversion.RequiredNodeType, key, optional) is not (true, {} node))
             return; //errors (if any) have been reported, nothing to do here
 
-        var before = _node;
-        _node = node;
-        value = conversion.Deserialize(this);
-        _node = before; 
+        value = conversion.Deserialize(new Deserializer(node, _contentErrors));
     }
     
     public void SetArray<TItem>(ref List<TItem> value, int idx, BymlConversion<TItem> conversion)
@@ -174,8 +165,7 @@ public class Deserializer : ISerializationContext
         //errors (if any) have been reported, nothing left to do here
     }
     
-    private List<TItem> ArrayToList<TItem>(BymlArray bymlArray, BymlConversion<TItem> conversion, 
-        bool optional = false)
+    private List<TItem> ArrayToList<TItem>(BymlArray bymlArray, BymlConversion<TItem> conversion)
     {
         var list = new List<TItem>();
 
@@ -187,10 +177,7 @@ public class Deserializer : ISerializationContext
                 continue;
             }
             
-            var before = _node;
-            _node = node;
-            list.Add(conversion.Deserialize(this));
-            _node = before; 
+            list.Add(conversion.Deserialize(new Deserializer(node, _contentErrors)));
         }
 
         return list;
@@ -207,10 +194,7 @@ public class Deserializer : ISerializationContext
                 continue;
             }
             
-            var before = _node;
-            _node = node;
-            dict[bymlMapKey] = conversion.Deserialize(this);
-            _node = before; 
+            dict[bymlMapKey] = conversion.Deserialize(new Deserializer(node, _contentErrors));
         }
 
         return dict;
@@ -222,11 +206,10 @@ public class Deserializer : ISerializationContext
     private (bool success, Byml? node) Retrieve(BymlNodeType? requiredNodeType, string key, bool isOptional)
     {
         if (_node.Value is not BymlMap map)
-        {
-            // technically this is a programmer error but throwing here is ugly
-            ReportUnexpectedType(expectedNodeType: BymlNodeType.Map);
-            return (false, null);
-        }
+            throw new InvalidOperationException(
+                $"Methods with {nameof(key)} parameter can only be called " +
+                $"if byml node is a {nameof(BymlMap)}"
+                );
 
         if (!map.TryGetValue(key, out var retrievedNode))
         {
@@ -250,11 +233,10 @@ public class Deserializer : ISerializationContext
     private (bool success, Byml? node) Retrieve(BymlNodeType? requiredNodeType, int idx)
     {
         if (_node.Value is not BymlArray array)
-        {
-            // technically this is a programmer error but throwing here is ugly
-            ReportUnexpectedType(expectedNodeType: BymlNodeType.Map);
-            return (false, null);
-        }
+            throw new InvalidOperationException(
+                $"Methods with {nameof(idx)} parameter can only be called " +
+                $"if byml node is a {nameof(BymlArray)}"
+            );
 
         if (idx >= array.Count)
         {

@@ -13,13 +13,13 @@ public class WorldList : GymlFile<WorldList>
     public List<string> WorldMapStagePath = null!;
     
     #region De/Serialization
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         base.Deserialize(ctx);
         ctx.SetArray(ref WorldMapStagePath, "WorldMapStagePath", STRING);
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         base.Serialize(ctx);
         ctx.SetArray(ref WorldMapStagePath, "WorldMapStagePath", STRING);

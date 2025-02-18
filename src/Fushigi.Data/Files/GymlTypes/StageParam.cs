@@ -8,13 +8,13 @@ public class StageParam : GymlFile<StageParam>
     public static readonly string[] DefaultSavePath = ["Stage", "StageParam"];
 
     public StageComponents Components = null!;
-    protected override void Deserialize(ISerializationContext ctx)
+    protected override void Deserialize<TContext>(TContext ctx)
     {
         base.Deserialize(ctx);
         ctx.SetObject(ref Components, "Components");
     }
 
-    protected override void Serialize(ISerializationContext ctx)
+    protected override void Serialize<TContext>(TContext ctx)
     {
         base.Serialize(ctx);
         ctx.SetObject(ref Components, "Components");
@@ -34,7 +34,7 @@ public class StageParam : GymlFile<StageParam>
         public string? WorldMapAnalysisInfo;
         public string? WorldMapInfo;
         
-        protected override void Deserialize(ISerializationContext ctx)
+        protected override void Deserialize<TContext>(TContext ctx)
         {
             ctx.Set(STRING, ref AreaParam!, "AreaParam", optional: true);
             ctx.Set(STRING, ref BakeSource!, "BakeSource", optional: true);
@@ -49,7 +49,7 @@ public class StageParam : GymlFile<StageParam>
             ctx.Set(STRING, ref WorldMapInfo!, "WorldMapInfo", optional: true);
         }
 
-        protected override void Serialize(ISerializationContext ctx)
+        protected override void Serialize<TContext>(TContext ctx)
         {
             ctx.Set(STRING, ref AreaParam!, "AreaParam", optional: true);
             ctx.Set(STRING, ref BakeSource!, "BakeSource", optional: true);
