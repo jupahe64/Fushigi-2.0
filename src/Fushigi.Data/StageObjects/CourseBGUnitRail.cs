@@ -4,6 +4,7 @@ namespace Fushigi.Data.StageObjects;
 
 public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
 {
+    private static BymlConversion<ModelTypes> MODEL_TYPE = SpecialConversions.GetEnumConversion<ModelTypes>();
     public enum ModelTypes
     {
         Solid, 
@@ -18,9 +19,7 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
 
     protected override void Deserialize<TContext>(TContext ctx)
     {
-        int type = 0;
-        ctx.Set(INT32, ref type, "ModelType");
-        ModelType = (ModelTypes)type;
+        ctx.Set(MODEL_TYPE, ref ModelType, "ModelType");
         ctx.Set(INT32, ref SkinDivision, "SkinDivision");
         ctx.SetArray(ref Walls, "Walls", Wall.Conversion, true);
         ctx.SetArray(ref BeltRails, "BeltRails", BgUnitRail.Conversion, true);
@@ -28,9 +27,7 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
 
     protected override void Serialize<TContext>(TContext ctx)
     {
-        int type = (int)ModelType;
-        ctx.Set(INT32, ref type, "ModelType");
-        ModelType = (ModelTypes)type;
+        ctx.Set(MODEL_TYPE, ref ModelType, "ModelType");
         ctx.Set(INT32, ref SkinDivision, "SkinDivision");
         ctx.SetArray(ref Walls, "Walls", Wall.Conversion, true);
         ctx.SetArray(ref BeltRails, "BeltRails", BgUnitRail.Conversion, true);

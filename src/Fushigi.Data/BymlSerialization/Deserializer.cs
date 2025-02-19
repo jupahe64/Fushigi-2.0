@@ -11,7 +11,8 @@ public enum ContentErrorFlags
     None = 0,
     UnexpectedType = 1 << 0,
     MissingKeys = 1 << 1,
-    MissingElements = 1 << 2
+    MissingElements = 1 << 2,
+    UnexpectedEnumValue = 1 << 3,
 }
 public record struct BymlContentErrorInfo(ContentErrorFlags Flags, BymlNodeType? ExpectedNodeType, 
     List<string>? MissingRequiredKeys, int? MinimumElementCount);
@@ -104,6 +105,16 @@ public readonly struct Deserializer : ISerializationContext
             errorInfo.MinimumElementCount == null ? 
                 idx + 1 : 
                 Math.Max(errorInfo.MinimumElementCount.Value, idx + 1);
+        _contentErrors[_node] = errorInfo;
+    }
+    
+    /// <summary>
+    /// Only meant to be used in conversions
+    /// </summary>
+    public void ReportUnexpectedEnumValue()
+    {
+        var errorInfo = GetOrCreateContentError(_node);
+        errorInfo.Flags |= ContentErrorFlags.UnexpectedEnumValue;
         _contentErrors[_node] = errorInfo;
     }
     

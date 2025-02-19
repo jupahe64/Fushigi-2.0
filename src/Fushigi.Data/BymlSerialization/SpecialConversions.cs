@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
 
@@ -6,6 +7,36 @@ namespace Fushigi.Data.BymlSerialization;
 
 public static class SpecialConversions
 {
+    #region Enum
+    public static BymlConversion<T> GetEnumConversion<T>() 
+        where T : struct, Enum
+    {
+        if (Unsafe.SizeOf<T>() != sizeof(int))
+            throw new ArgumentException($"The underlying type of enum {nameof(T)} is not a 32 bit integer.", nameof(T));
+        
+        return new BymlConversion<T>(BymlNodeType.Int, DeserializeEnum<T>, SerializeEnum);
+    }
+
+    private static T DeserializeEnum<T>(Deserializer deserializer)
+        where T : struct, Enum
+    {
+        int value = deserializer.GetNode().GetInt();
+        var enumValue = Unsafe.As<int, T>(ref value);
+        if (!Enum.IsDefined(enumValue))
+        {
+            deserializer.ReportUnexpectedEnumValue();
+            return default;
+        }
+        return enumValue;
+    }
+    
+    private static Byml SerializeEnum<T>(T value)
+        where T : struct, Enum
+    {
+        return new Byml(Unsafe.As<T, int>(ref value));
+    }
+    #endregion
+    
     #region Float3
 
     public static readonly BymlConversion<Vector3> Float3 = 
