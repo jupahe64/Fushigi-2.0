@@ -57,15 +57,7 @@ public readonly struct Deserializer : ISerializationContext
         _contentErrors = contentErrors;
     }
 
-    private BymlContentErrorInfo GetOrCreateContentError(Byml node)
-    {
-        return _contentErrors.TryGetValue(node, out var errorInfo) ? 
-            errorInfo : new BymlContentErrorInfo();
-    }
-
-    /// <summary>
-    /// Only meant to be used in conversions
-    /// </summary>
+    #region Error Reporting
     public void ReportUnexpectedType(BymlNodeType? expectedNodeType = null)
     {
         var errorInfo = GetOrCreateContentError(_node);
@@ -83,9 +75,6 @@ public readonly struct Deserializer : ISerializationContext
         _contentErrors[node] = errorInfo;
     }
     
-    /// <summary>
-    /// Only meant to be used in conversions
-    /// </summary>
     public void ReportMissingKey(string key)
     {
         var errorInfo = GetOrCreateContentError(_node);
@@ -94,9 +83,6 @@ public readonly struct Deserializer : ISerializationContext
         _contentErrors[_node] = errorInfo;
     }
     
-    /// <summary>
-    /// Only meant to be used in conversions
-    /// </summary>
     public void ReportMissingElement(int idx)
     {
         var errorInfo = GetOrCreateContentError(_node);
@@ -108,9 +94,6 @@ public readonly struct Deserializer : ISerializationContext
         _contentErrors[_node] = errorInfo;
     }
     
-    /// <summary>
-    /// Only meant to be used in conversions
-    /// </summary>
     public void ReportUnexpectedEnumValue()
     {
         var errorInfo = GetOrCreateContentError(_node);
@@ -118,10 +101,27 @@ public readonly struct Deserializer : ISerializationContext
         _contentErrors[_node] = errorInfo;
     }
     
-    /// <summary>
-    /// Only meant to be used in conversions
-    /// </summary>
+    private BymlContentErrorInfo GetOrCreateContentError(Byml node)
+    {
+        return _contentErrors.TryGetValue(node, out var errorInfo) ? 
+            errorInfo : new BymlContentErrorInfo();
+    }
+    #endregion
+
+    #region Direct access API
+    //everything you need for deserialization and error reporting
     public Byml GetNode() => _node;
+    
+    /// <summary>
+    /// Creates a new <see cref="Deserializer"/> that reports errors for <paramref name="node"/>
+    /// to the instance this method is called on
+    /// <para>It is assumed that <paramref name="node"/> is part of the same byml file. (No checks are done)</para>
+    /// </summary>
+    public Deserializer CreateDeserializerFor(Byml node) => new(node, _contentErrors);
+    #endregion
+    
+    #region Checked ref assignment API
+    //it's convenient and it lets us easily implement ISerializationContext
     
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue value, int idx)
     {
@@ -130,6 +130,7 @@ public readonly struct Deserializer : ISerializationContext
 
         value = conversion.Deserialize(new Deserializer(node, _contentErrors));
     }
+    
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue value, string key, 
         bool optional = false)
     {
@@ -147,25 +148,11 @@ public readonly struct Deserializer : ISerializationContext
 
         value = conversion.Deserialize(new Deserializer(node, _contentErrors));
     }
-    
-    public void SetArray<TItem>(ref List<TItem> value, int idx, BymlConversion<TItem> conversion)
-    {
-        if (Retrieve(BymlNodeType.Array, idx) is (true, {} byml))
-            value = ArrayToList(byml.GetArray(), conversion);
-        //errors (if any) have been reported, nothing left to do here
-    }
     public void SetArray<TItem>(ref List<TItem> value, string key, BymlConversion<TItem> conversion, 
         bool optional = false)
     {
         if (Retrieve(BymlNodeType.Array, key, optional) is (true, {} byml))
             value = ArrayToList(byml.GetArray(), conversion);
-        //errors (if any) have been reported, nothing left to do here
-    }
-    
-    public void SetMap<TItem>(ref Dictionary<string, TItem> value, int idx, BymlConversion<TItem> conversion)
-    {
-        if (Retrieve(BymlNodeType.Map, idx) is (true, {} byml))
-            value = MapToDict(byml.GetMap(), conversion);
         //errors (if any) have been reported, nothing left to do here
     }
     public void SetMap<TItem>(ref Dictionary<string, TItem> value, string key, BymlConversion<TItem> conversion, 
@@ -210,6 +197,8 @@ public readonly struct Deserializer : ISerializationContext
 
         return dict;
     }
+    #endregion
+    
     
     /// <summary>
     /// Retrieve the value in the BymlMap of _node by key and check type

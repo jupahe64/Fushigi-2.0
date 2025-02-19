@@ -104,17 +104,12 @@ public static class SpecialConversions
         List<PropertyDict.Entry> entries = [];
         foreach (var (key, value) in map)
         {
-            Vector3 ParseFloat3()
+            static Vector3 ParseFloat3(Deserializer deserializer, Byml node) 
+                => DeserializeFloat3(deserializer.CreateDeserializerFor(node));
+
+            static object HandleUnexpected(Deserializer deserializer, Byml node)
             {
-                //a bit hacky but it's the simplest way to ensure errors are handled
-                Vector3 vec = default;
-                deserializer.Set(Float3, ref vec, key);
-                return vec;
-            }
-            
-            object HandleUnexpected()
-            {
-                deserializer.ReportUnexpectedType();
+                deserializer.CreateDeserializerFor(node).ReportUnexpectedType();
                 return null!;
             }
             
@@ -128,9 +123,9 @@ public static class SpecialConversions
                 BymlNodeType.UInt64 => value.GetUInt64(),
                 BymlNodeType.Float => value.GetFloat(),
                 BymlNodeType.Double => value.GetDouble(),
-                BymlNodeType.Array => ParseFloat3(),
+                BymlNodeType.Array => ParseFloat3(deserializer, value),
                 BymlNodeType.Null => null!,
-                _ => HandleUnexpected(),
+                _ => HandleUnexpected(deserializer, value),
             };
 
             entries.Add(new(key, parsed));
