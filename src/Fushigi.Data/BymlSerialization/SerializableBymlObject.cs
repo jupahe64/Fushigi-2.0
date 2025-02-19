@@ -23,14 +23,14 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
         {
             _map = deserializer.GetNode().GetMap()
         };
-        obj.Deserialize(deserializer);
+        obj.Serialization(deserializer);
         return obj;
     }
     
     private static Byml SerializeFunc(T obj)
     {
         obj._map ??= [];
-        obj.Serialize(new Serializer(obj._map));
+        obj.Serialization(new Serializer(obj._map));
         return new Byml(obj._map!);
     }
 
@@ -38,7 +38,7 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     {
         _map ??= [];
 
-        Serialize(new Serializer(_map));
+        Serialization(new Serializer(_map));
         return new Byml(_map!);
     }
     
@@ -56,9 +56,8 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     protected readonly BymlConversion<Vector3>      VECTOR3D      = SpecialConversions.Vector3D;
     protected readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
     // ReSharper restore InconsistentNaming
-    
-    protected abstract void Deserialize<TContext>(TContext ctx) where TContext : struct, ISerializationContext;
-    protected abstract void Serialize<TContext>(TContext ctx) where TContext : struct, ISerializationContext;
+
+    protected abstract void Serialization<TContext>(TContext ctx) where TContext : struct, ISerializationContext;
     
     private BymlMap? _map;
 }

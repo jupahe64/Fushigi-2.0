@@ -17,15 +17,7 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
     public List<Wall> Walls = null!;
     public List<BgUnitRail> BeltRails = null!;
 
-    protected override void Deserialize<TContext>(TContext ctx)
-    {
-        ctx.Set(MODEL_TYPE, ref ModelType, "ModelType");
-        ctx.Set(INT32, ref SkinDivision, "SkinDivision");
-        ctx.SetArray(ref Walls, "Walls", Wall.Conversion, true);
-        ctx.SetArray(ref BeltRails, "BeltRails", BgUnitRail.Conversion, true);
-    }
-
-    protected override void Serialize<TContext>(TContext ctx)
+    protected override void Serialization<TContext>(TContext ctx)
     {
         ctx.Set(MODEL_TYPE, ref ModelType, "ModelType");
         ctx.Set(INT32, ref SkinDivision, "SkinDivision");
@@ -37,12 +29,8 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
     {
         public BgUnitRail ExternalRail = null!;
         public List<BgUnitRail> InternalRails = null!;
-        protected override void Deserialize<TContext>(TContext ctx)
-        {
-            ctx.SetObject(ref ExternalRail, "ExternalRail");
-            ctx.SetArray(ref InternalRails, "InternalRails", BgUnitRail.Conversion, true);
-        }
-        protected override void Serialize<TContext>(TContext ctx)
+
+        protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.SetObject(ref ExternalRail, "ExternalRail");
             ctx.SetArray(ref InternalRails, "InternalRails", BgUnitRail.Conversion, true);
@@ -53,12 +41,7 @@ public class CourseBgUnit : SerializableBymlObject<CourseBgUnit>
         public List<RailPoint> Points = null!;
         public bool IsClosed;
 
-        protected override void Deserialize<TContext>(TContext ctx)
-        {
-            ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
-            ctx.Set(BOOL, ref IsClosed, "IsClosed");
-        }
-        protected override void Serialize<TContext>(TContext ctx)
+        protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.SetArray(ref Points, "Points", RailPoint.Conversion);
             ctx.Set(BOOL, ref IsClosed, "IsClosed");

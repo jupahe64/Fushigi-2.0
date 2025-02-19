@@ -8,15 +8,10 @@ public class StageParam : GymlFile<StageParam>
     public static readonly string[] DefaultSavePath = ["Stage", "StageParam"];
 
     public StageComponents Components = null!;
-    protected override void Deserialize<TContext>(TContext ctx)
-    {
-        base.Deserialize(ctx);
-        ctx.SetObject(ref Components, "Components");
-    }
 
-    protected override void Serialize<TContext>(TContext ctx)
+    protected override void Serialization<TContext>(TContext ctx)
     {
-        base.Serialize(ctx);
+        base.Serialization(ctx);
         ctx.SetObject(ref Components, "Components");
     }
 
@@ -33,23 +28,8 @@ public class StageParam : GymlFile<StageParam>
         public string? WorldList;
         public string? WorldMapAnalysisInfo;
         public string? WorldMapInfo;
-        
-        protected override void Deserialize<TContext>(TContext ctx)
-        {
-            ctx.Set(STRING, ref AreaParam!, "AreaParam", optional: true);
-            ctx.Set(STRING, ref BakeSource!, "BakeSource", optional: true);
-            ctx.Set(STRING, ref CourseInfo!, "CourseInfo", optional: true);
-            ctx.Set(STRING, ref MapAnalysisInfo!, "MapAnalysisInfo", optional: true);
-            ctx.Set(STRING, ref Mumap!, "Mumap", optional: true);
-            ctx.Set(STRING, ref StageLoadInfo!, "StageLoadInfo", optional: true);
-            ctx.Set(STRING, ref StageSequenceInfo!, "StageSequenceInfo", optional: true);
-            ctx.Set(STRING, ref StaticCompoundBodySourceParam!, "StaticCompoundBodySourceParam", optional: true);
-            ctx.Set(STRING, ref WorldList!, "WorldList", optional: true);
-            ctx.Set(STRING, ref WorldMapAnalysisInfo!, "WorldMapAnalysisInfo", optional: true);
-            ctx.Set(STRING, ref WorldMapInfo!, "WorldMapInfo", optional: true);
-        }
 
-        protected override void Serialize<TContext>(TContext ctx)
+        protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.Set(STRING, ref AreaParam!, "AreaParam", optional: true);
             ctx.Set(STRING, ref BakeSource!, "BakeSource", optional: true);

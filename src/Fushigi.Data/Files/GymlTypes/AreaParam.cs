@@ -17,14 +17,9 @@ public class AreaParam : GymlFile<AreaParam>
     public float WonderBgmStartOffset;
     public PropertyDict SkinParam = null!;
 
-    protected override void Deserialize<TContext>(TContext ctx)
+    protected override void Serialization<TContext>(TContext ctx)
     {
-        base.Deserialize(ctx);
-    }
-
-    protected override void Serialize<TContext>(TContext ctx)
-    {
-        base.Serialize(ctx);
+        base.Serialization(ctx);
     }
 
     public class EnvPalette : SerializableBymlObject<EnvPalette>
@@ -32,11 +27,7 @@ public class AreaParam : GymlFile<AreaParam>
         public float InitPaletteBaseName;
         public List<string> WonderPaletteList = null!;
 
-        protected override void Deserialize<TContext>(TContext ctx)
-        {
-        }
-
-        protected override void Serialize<TContext>(TContext ctx)
+        protected override void Serialization<TContext>(TContext ctx)
         {
         }
     }

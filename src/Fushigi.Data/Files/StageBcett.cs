@@ -19,21 +19,8 @@ public class StageBcett : SerializableBymlObject<StageBcett>
     public List<CourseLink> ActorToRailLinks = null!;
     public List<SimultaneousGroup> SimultaneousGroups = null!;
     public List<string> RefStages = null!;
-    
-    protected override void Deserialize<TContext>(TContext ctx)
-    {
-        ctx.Set(UINT32, ref RootAreaHash, "RootAreaHash");
-        ctx.Set(STRING, ref StageParamPath, "StageParam");
-        ctx.SetArray(ref Actors, "Actors", StageActor.Conversion);
-        ctx.SetArray(ref Rails, "Rails", StageRail.Conversion, optional: true);
-        ctx.SetArray(ref BgUnits, "BgUnits", CourseBgUnit.Conversion, optional: true);
-        ctx.SetArray(ref Links, "Links", CourseLink.Conversion, optional: true);
-        ctx.SetArray(ref ActorToRailLinks, "ActorToRailLinks", CourseLink.Conversion, optional: true);
-        ctx.SetArray(ref SimultaneousGroups, "SimultaneousGroups", SimultaneousGroup.Conversion, optional: true);
-        ctx.SetArray(ref RefStages, "RefStages", STRING, optional: true);
-    }
 
-    protected override void Serialize<TContext>(TContext ctx)
+    protected override void Serialization<TContext>(TContext ctx)
     {
         ctx.Set(UINT32, ref RootAreaHash, "RootAreaHash");
         ctx.Set(STRING, ref StageParamPath, "StageParam");
@@ -53,15 +40,7 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         public ulong Point;
         public string LinkType = null!;
 
-        protected override void Deserialize<TContext>(TContext ctx)
-        {
-            ctx.Set(UINT64, ref Destination, "Dst");
-            ctx.Set(UINT64, ref Source, "Src");
-            ctx.Set(STRING, ref LinkType, "Name");
-            ctx.Set(UINT64, ref Point, "Point", optional: true);
-        }
-
-        protected override void Serialize<TContext>(TContext ctx)
+        protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.Set(UINT64, ref Destination, "Dst");
             ctx.Set(UINT64, ref Source, "Src");
@@ -75,13 +54,7 @@ public class StageBcett : SerializableBymlObject<StageBcett>
         public ulong Hash;
         public List<ulong> Actors = null!;
 
-        protected override void Deserialize<TContext>(TContext ctx)
-        {
-            ctx.Set(UINT64, ref Hash, "Hash");
-            ctx.SetArray(ref Actors, "Actors", UINT64);
-        }
-
-        protected override void Serialize<TContext>(TContext ctx)
+        protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.Set(UINT64, ref Hash, "Hash");
             ctx.SetArray(ref Actors, "Actors", UINT64);
