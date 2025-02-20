@@ -62,6 +62,24 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     private BymlMap? _map;
 }
 
+public static class BymlObjectConversions
+{
+    // ReSharper disable InconsistentNaming
+    internal static readonly BymlConversion<int>    INT32 =  Conversions.Int32;
+    internal static readonly BymlConversion<uint>   UINT32 = Conversions.UInt32;
+    internal static readonly BymlConversion<long>   INT64 =  Conversions.Int64;
+    internal static readonly BymlConversion<ulong>  UINT64 = Conversions.UInt64;
+    internal static readonly BymlConversion<float>  FLOAT =  Conversions.Float;
+    internal static readonly BymlConversion<double> DOUBLE = Conversions.Double;
+    internal static readonly BymlConversion<string> STRING = Conversions.String;
+    internal static readonly BymlConversion<bool>   BOOL   = Conversions.Bool;
+    
+    internal static readonly BymlConversion<Vector3>      FLOAT3        = SpecialConversions.Float3;
+    internal static readonly BymlConversion<Vector3>      VECTOR3D      = SpecialConversions.Vector3D;
+    internal static readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
+    // ReSharper restore InconsistentNaming
+}
+
 public interface IDeserializedBymlObject<T> : IDeserializedBymlObject
 {
     public static abstract Task<(bool success, T value)> DeserializeFrom(Byml byml,
