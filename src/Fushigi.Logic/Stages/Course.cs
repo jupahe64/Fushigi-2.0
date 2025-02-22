@@ -1,12 +1,13 @@
 ﻿using Fushigi.Data;
 using Fushigi.Data.Files;
-using Fushigi.Data.RomFSExtensions;
+using Fushigi.Data.Files.GymlTypes;
 
 namespace Fushigi.Logic.Stages;
 
 public class Course : Stage
 {
-    public new static async Task<(bool success, Course? course)> Load(RomFS romFS, GymlRef stageParamGymlRef,
+    public new static async Task<(bool success, Course? course)> Load(RomFS romFS, 
+        GymlRef<StageParam> stageParamGymlRef,
         IStageLoadingErrorHandler errorHandler)
     {
         if (await Stage.Load(romFS, stageParamGymlRef, errorHandler)

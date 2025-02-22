@@ -10,7 +10,7 @@ using GymlTypes = Data.Files.GymlTypes;
 public class WorldList
 {
     public static async Task<(bool success, WorldList? muMap)> Load(
-        RomFS romFS, GymlRef gymlPath,
+        RomFS romFS, GymlRef<GymlTypes.WorldList> gymlPath,
         IStageLoadingErrorHandler errorHandler)
     {
         if (await romFS.LoadGyml<GymlTypes.WorldList>(gymlPath, errorHandler)
@@ -39,10 +39,10 @@ public class WorldList
     public IReadOnlyList<WorldMap?> Worlds => _worldMaps;
     
     private readonly List<WorldMap?> _worldMaps = [];
-    private readonly GymlRef _gymlRef;
+    private readonly GymlRef<GymlTypes.WorldList> _gymlRef;
     private readonly GymlTypes.WorldList _worldList;
 
-    private WorldList(GymlRef gymlRef, GymlTypes.WorldList worldList)
+    private WorldList(GymlRef<GymlTypes.WorldList> gymlRef, GymlTypes.WorldList worldList)
     {
         _gymlRef = gymlRef;
         _worldList = worldList;

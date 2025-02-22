@@ -1,8 +1,11 @@
 ﻿using Fushigi.Data;
 using Fushigi.Data.Files;
+using Fushigi.Data.Files.GymlTypes;
 using Fushigi.Data.RomFSExtensions;
 
 namespace Fushigi.Logic.Stages;
+
+using STAGE_PARAM_REF = GymlRef<StageParam>;
 
 public sealed class MuMap
 {
@@ -24,12 +27,13 @@ public sealed class MuMap
     
     //Todo Load stage objects with a Course loading context so all linked objects actually reference each other
     
-    public IReadOnlyList<GymlRef> RefStages => _refStages ?? (IReadOnlyList<GymlRef>)Array.Empty<GymlRef>();
+    public IReadOnlyList<STAGE_PARAM_REF> RefStages => 
+        _refStages ?? (IReadOnlyList<STAGE_PARAM_REF>)Array.Empty<STAGE_PARAM_REF>();
     
     private readonly MuMapRef _muMapRef;
-    private readonly List<GymlRef>? _refStages;
+    private readonly List<STAGE_PARAM_REF>? _refStages;
 
-    private MuMap(MuMapRef muMapPath, List<GymlRef>? refStages)
+    private MuMap(MuMapRef muMapPath, List<STAGE_PARAM_REF>? refStages)
     {
         _muMapRef = muMapPath;
         _refStages = refStages;

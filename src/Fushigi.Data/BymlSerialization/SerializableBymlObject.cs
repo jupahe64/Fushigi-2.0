@@ -2,6 +2,7 @@
 using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
 using Fushigi.Data.Files;
+using Fushigi.Data.Files.GymlTypes;
 
 // ReSharper disable RedundantTypeArgumentsOfMethod
 // ReSharper disable MemberCanBeMadeStatic.Global
@@ -58,7 +59,10 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     protected readonly BymlConversion<Vector3>      VECTOR3D      = SpecialConversions.Vector3D;
     protected readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
     
-    protected readonly BymlConversion<GymlRef> GYML_REF = FileRefConversion.For<GymlRef>();
+    protected BymlConversion<GymlRef<TGymlFile>> GYML_REF<TGymlFile>()
+        where TGymlFile : GymlFile<TGymlFile>, IGymlType, new()
+        => FileRefConversion.For<GymlRef<TGymlFile>>();
+    
     protected readonly BymlConversion<MuMapRef> MU_MAP_REF = FileRefConversion.For<MuMapRef>();
     // ReSharper restore InconsistentNaming
 
@@ -83,7 +87,10 @@ public static class BymlObjectConversions
     internal static readonly BymlConversion<Vector3>      VECTOR3D      = SpecialConversions.Vector3D;
     internal static readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
     
-    internal static readonly BymlConversion<GymlRef>  GYML_REF   = FileRefConversion.For<GymlRef>();
+    internal static BymlConversion<GymlRef<TGymlFile>> GYML_REF<TGymlFile>()
+        where TGymlFile : GymlFile<TGymlFile>, IGymlType, new()
+        => FileRefConversion.For<GymlRef<TGymlFile>>();
+    
     internal static readonly BymlConversion<MuMapRef> MU_MAP_REF = FileRefConversion.For<MuMapRef>();
     // ReSharper restore InconsistentNaming
 }

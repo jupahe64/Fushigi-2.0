@@ -1,5 +1,6 @@
 using BymlLibrary;
 using Fushigi.Data.BymlSerialization;
+using Fushigi.Data.Files.GymlTypes;
 using Fushigi.Data.StageObjects;
 using static Fushigi.Data.BymlSerialization.BymlObjectConversions;
 
@@ -20,7 +21,7 @@ public static class StageBcett
         public required ListSegment<Link>? Links;
         public required ListSegment<ActorToRailLink>? ActorToRailLinks;
         public required ListSegment<SimultaneousGroup>? SimultaneousGroups;
-        public required ListSegment<GymlRef>? RefStages;
+        public required ListSegment<GymlRef<StageParam>>? RefStages;
         
         public uint RootAreaHash;
         public string StageParamPath = null!;
@@ -51,7 +52,7 @@ public static class StageBcett
             ActorToRailLinks = sod.DeserializeArray(d, "ActorToRailLinks", ActorToRailLink.Deserialize, optional: true),
             SimultaneousGroups = sod.DeserializeArray(d, "SimultaneousGroups", SimultaneousGroup.Deserialize, optional: true),
             RefStages = sod.DeserializeArray(d, "RefStages", 
-                (sd,_)=>GYML_REF.Deserialize(sd), STRING.RequiredNodeType, optional: true),
+                (sd,_)=>GYML_REF<StageParam>().Deserialize(sd), STRING.RequiredNodeType, optional: true),
         };
         content.Serialization(d);
         return (content, sod);

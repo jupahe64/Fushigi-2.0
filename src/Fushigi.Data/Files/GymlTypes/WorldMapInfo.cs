@@ -2,18 +2,21 @@
 
 namespace Fushigi.Data.Files.GymlTypes;
 
-public class WorldMapInfo : GymlFile<WorldMapInfo>
+public class WorldMapInfo : GymlFile<WorldMapInfo>, IGymlType
 {
+    public static string GymlTypeSuffix => "game__stage__WorldMapInfo";
+    public static readonly string[] DefaultSavePath = ["Stage", "WorldMapInfo"];
+    
     public List<CourseTableEntry> CourseTable;
     public class CourseTableEntry : SerializableBymlObject<CourseTableEntry>
     {
         public string Key = null!;
-        public GymlRef StagePath;
+        public GymlRef<StageParam> StagePath;
 
         protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.Set(STRING, ref Key, "Key");
-            ctx.Set(GYML_REF, ref StagePath, "StagePath");
+            ctx.Set(GYML_REF<StageParam>(), ref StagePath, "StagePath");
         }
     }
 

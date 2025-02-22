@@ -6,52 +6,53 @@ namespace Fushigi.Data.Files.GymlTypes;
 /// <summary>
 /// Serializable game.stage.WorldList
 /// </summary>
-public class WorldList : GymlFile<WorldList>
+public class WorldList : GymlFile<WorldList>, IGymlType
 {
+    public static string GymlTypeSuffix => "game__stage__WorldList";
+    public static readonly string[] DefaultSavePath = ["Stage", "WorldList"];
+    
     // Nintendo decided it'd be a good idea to have empty entries in WorldList
     // so yeah...
-    public struct GymlRefOrEmpty
+    public struct GymlRefOrEmpty<TGymlFile>
+        where TGymlFile : GymlFile<TGymlFile>, IGymlType, new()
     {
-        public static readonly GymlRefOrEmpty Empty = new();
-        public static GymlRefOrEmpty Create(GymlRef gymlRef) => new() {GymlRef = gymlRef};
-        public static implicit operator GymlRefOrEmpty(GymlRef gymlRef) => new() {GymlRef = gymlRef};
-        public GymlRef? GymlRef { get; private init; }
+        public static readonly GymlRefOrEmpty<TGymlFile> Empty = new();
+        public static GymlRefOrEmpty<TGymlFile> Create(GymlRef<TGymlFile> gymlRef) => new() {GymlRef = gymlRef};
+        public static implicit operator GymlRefOrEmpty<TGymlFile>(GymlRef<TGymlFile> gymlRef) => new() {GymlRef = gymlRef};
+        public GymlRef<TGymlFile>? GymlRef { get; private init; }
         
         // ReSharper disable once MemberHidesStaticFromOuterClass
-        public static BymlConversion<GymlRefOrEmpty> Conversion => 
+        public static BymlConversion<GymlRefOrEmpty<TGymlFile>> Conversion => 
             new(BymlNodeType.String, Deserialize, Serialize);
         
-        private static Byml Serialize(GymlRefOrEmpty value)
+        private static Byml Serialize(GymlRefOrEmpty<TGymlFile> value)
         {
             return value.GymlRef is null ?
                 new Byml("") : new Byml(value.GymlRef.Value.ValidatedRefPath);
         }
 
-        private static GymlRefOrEmpty Deserialize(Deserializer deserializer)
+        private static GymlRefOrEmpty<TGymlFile> Deserialize(Deserializer deserializer)
         {
             var byml = deserializer.GetNode();
             string value = byml.GetString();
             if (value == string.Empty)
-                return new GymlRefOrEmpty();
+                return new GymlRefOrEmpty<TGymlFile>();
             
-            if (!FileRefConversion.IsValid<GymlRef>(value))
                 deserializer.ReportInvalidRefPath();
+            if (!FileRefConversion.IsValid<GymlRef<TGymlFile>>(value))
         
-            return new GymlRefOrEmpty { GymlRef = new GymlRef {ValidatedRefPath = value} };
+            return new GymlRefOrEmpty<TGymlFile> { GymlRef = new GymlRef<TGymlFile> {ValidatedRefPath = value} };
         }
     }
     
-    public static readonly string GymlTypeSuffix = "game__stage__WorldList";
-    public static readonly string[] DefaultSavePath = ["Stage", "WorldList"];
-    
-    public List<GymlRefOrEmpty> WorldMapStagePath = null!;
+    public List<GymlRefOrEmpty<StageParam>> WorldMapStagePath = null!;
     
     #region De/Serialization
 
     protected override void Serialization<TContext>(TContext ctx)
     {
         base.Serialization(ctx);
-        ctx.SetArray(ref WorldMapStagePath, "WorldMapStagePath", GymlRefOrEmpty.Conversion);
+        ctx.SetArray(ref WorldMapStagePath, "WorldMapStagePath", GymlRefOrEmpty<StageParam>.Conversion);
     }
     #endregion
 }

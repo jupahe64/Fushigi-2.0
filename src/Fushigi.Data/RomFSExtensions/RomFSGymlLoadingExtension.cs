@@ -21,10 +21,10 @@ public static class RomFSGymlLoadingExtension
 {
     private static readonly Dictionary<RomFS, GymlManager> s_gymlManagerLookup = [];
     
-    public static async Task<(bool success, T?)> LoadGyml<T>(this RomFS romFS, GymlRef gymlRef,
+    public static async Task<(bool success, T?)> LoadGyml<T>(this RomFS romFS, GymlRef<T> gymlRef,
         IGymlFileLoadingErrorHandler errorHandler,
         PackInfo? pack = null)
-        where T : GymlFile<T>, new()
+        where T : GymlFile<T>, IGymlType, new()
     {
         if (!s_gymlManagerLookup.TryGetValue(romFS, out var gymlManager))
         {
@@ -32,7 +32,7 @@ public static class RomFSGymlLoadingExtension
             s_gymlManagerLookup[romFS] = gymlManager;
         }
 
-        return await gymlManager.LoadGyml<T>(gymlRef,
+        return await gymlManager.LoadGyml(gymlRef,
             //no need to allocate anything until we actually have an inheritance chain
             ImmutableList<(string, RomFS.RetrievedFileLocation)>.Empty, 
             errorHandler,
@@ -43,12 +43,12 @@ public static class RomFSGymlLoadingExtension
     {
         private readonly Dictionary<string, (object instance, RomFS.RetrievedFileLocation fileLocation)> _loadedGymlFiles = [];
         
-        public async Task<(bool success, T?)> LoadGyml<T>(GymlRef gymlRef,
+        public async Task<(bool success, T?)> LoadGyml<T>(GymlRef<T> gymlRef,
             //only works with recursion, stack like
             ImmutableList<(string, RomFS.RetrievedFileLocation)> inheritanceChain, 
             IGymlFileLoadingErrorHandler errorHandler,
             PackInfo? pack = null)
-            where T : GymlFile<T>, new()
+            where T : GymlFile<T>, IGymlType, new()
         {
             if (_loadedGymlFiles.TryGetValue(gymlRef.ValidatedRefPath, out var alreadyLoadedGyml))
             {
