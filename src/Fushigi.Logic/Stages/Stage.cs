@@ -14,7 +14,7 @@ public interface IStageLoadingErrorHandler
 public abstract class Stage
 {
     public MuMap MuMap => _baseInfo.MuMap;
-    internal string GymlPath => _baseInfo.GymlPath;
+    internal GymlRef GymlRef => _baseInfo.GymlRef;
     
     protected RomFS RomFS => _baseInfo.RomFS;
     
@@ -26,25 +26,25 @@ public abstract class Stage
     protected struct StageBaseInfo
     {
         public required RomFS RomFS;
-        public required string GymlPath;
+        public required GymlRef GymlRef;
         public required StageParam StageParam;
         public required MuMap MuMap;
     }
     
     protected static async Task<(bool success, StageBaseInfo loadedInfo)> Load(
-        RomFS romFS, string stageParamGymlPath,
+        RomFS romFS, GymlRef stageParamGymlRef,
         IStageLoadingErrorHandler errorHandler)
     {
-        if (await romFS.LoadGyml<StageParam>(stageParamGymlPath, errorHandler)
+        if (await romFS.LoadGyml<StageParam>(stageParamGymlRef, errorHandler)
             is not (true, { } stageParam)) return (false, default);
         
-        if (await MuMap.Load(romFS, stageParam.Components.Mumap!, errorHandler)
+        if (await MuMap.Load(romFS, stageParam.Components.Mumap!.Value, errorHandler)
             is not (true, { } muMap)) return (false, default);
         
         var info = new StageBaseInfo
         {
             RomFS = romFS,
-            GymlPath = stageParamGymlPath,
+            GymlRef = stageParamGymlRef,
             StageParam = stageParam,
             MuMap = muMap
         };

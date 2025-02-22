@@ -84,9 +84,6 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         public Task OnFileReadFailed(FileFormatReaderErrorInfo info)
             => throw new System.NotImplementedException();
 
-        public Task OnInvalidFileRefPath(InvalidFileRefPathErrorInfo info)
-            => throw new System.NotImplementedException();
-
         public Task OnGymlTypeMismatch(LoadedGymlTypeMismatchErrorInfo info)
             => throw new System.NotImplementedException();
 
@@ -96,7 +93,7 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         public Task OnUnexpectedRootType(UnexpectedRootTypeErrorInfo info) 
             => throw new System.NotImplementedException();
 
-        public Task OnContentErrorsFound(IReadOnlyDictionary<Byml, BymlContentErrorInfo> errors) 
+        public Task OnContentErrorsFound(ContentErrorsFoundErrorInfo info) 
             => throw new System.NotImplementedException();
     }
 
@@ -104,10 +101,10 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
     {
         var errorHandler = new LoadWorldmapAndCourseErrorHandler();
         //this is just for testing purposes
-        if (await _loadedGame!.LoadWorldList(errorHandler) 
+        if (await _loadedGame!.LoadWorldList(errorHandler)
             is not (true, { } worldList)) return;
         
-        if (await worldList!.Worlds[0].LoadCourse(0, errorHandler) 
+        if (await worldList.Worlds[0]!.LoadCourse(1, errorHandler)
             is not (true, { } course)) return;
         
     }
@@ -145,6 +142,14 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
             $"{e.InternalException.GetType().Name}: {e.InternalException.Message}");
 
     public Task OnFileReadFailed(FileFormatReaderErrorInfo e) => 
-        ShowSimpleDialog($"Failed to read {e.FilePath[^1]}",
+        ShowSimpleDialog($"Failed to read {GetFileLocationString(e.FileLocation)}",
             $"{e.InternalException.GetType().Name}: {e.InternalException.Message}");
+
+    private static string GetFileLocationString(RomFS.RetrievedFileLocation fileLocation) => fileLocation switch
+    {
+        { InPack: { PackFilePath: var packPath, InPackSubPath: var subPath } } =>
+            $"{packPath}:{string.Join('/', subPath)}",
+        { InFileSystem.FilePath: var filePath } => filePath,
+        _ => "<InvalidFileLocation>"
+    };
 }

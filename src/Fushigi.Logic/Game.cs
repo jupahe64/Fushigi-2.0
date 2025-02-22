@@ -1,4 +1,5 @@
 ﻿using Fushigi.Data;
+using Fushigi.Data.Files;
 using Fushigi.Logic.Stages;
 
 namespace Fushigi.Logic;
@@ -21,8 +22,11 @@ public class Game
 
     public Task<(bool success, WorldList? worldList)> LoadWorldList(
         IStageLoadingErrorHandler errorHandler)
-        => WorldList.Load(_romFS, "Work/Stage/WorldList/WorldList.game__stage__WorldList.gyml", errorHandler);
+        => WorldList.Load(_romFS, s_worldListRef, errorHandler);
 
+    private static readonly GymlRef s_worldListRef = 
+        FileRefConversion.Parse<GymlRef>("Work/Stage/WorldList/WorldList.game__stage__WorldList.gyml");
+    
     private readonly RomFS _romFS;
 
     private Game(RomFS romFs)

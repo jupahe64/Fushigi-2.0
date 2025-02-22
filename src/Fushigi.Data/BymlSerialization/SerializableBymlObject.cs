@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
 using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
+using Fushigi.Data.Files;
+
 // ReSharper disable RedundantTypeArgumentsOfMethod
 // ReSharper disable MemberCanBeMadeStatic.Global
 
@@ -10,9 +12,9 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     where T : SerializableBymlObject<T>, new()
 {
     public static async Task<(bool success, T value)> DeserializeFrom(Byml byml,
-        IBymlDeserializeErrorHandler errorHandler)
+        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo)
     {
-        return await Deserializer.Deserialize(byml, DeserializeFunc, errorHandler);
+        return await Deserializer.Deserialize(byml, DeserializeFunc, errorHandler, fileLocationInfo);
     }
     
     public static readonly BymlConversion<T> Conversion = new(BymlNodeType.Map, DeserializeFunc, SerializeFunc);
@@ -55,6 +57,9 @@ public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
     protected readonly BymlConversion<Vector3>      FLOAT3        = SpecialConversions.Float3;
     protected readonly BymlConversion<Vector3>      VECTOR3D      = SpecialConversions.Vector3D;
     protected readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
+    
+    protected readonly BymlConversion<GymlRef> GYML_REF = FileRefConversion.For<GymlRef>();
+    protected readonly BymlConversion<MuMapRef> MU_MAP_REF = FileRefConversion.For<MuMapRef>();
     // ReSharper restore InconsistentNaming
 
     protected abstract void Serialization<TContext>(TContext ctx) where TContext : struct, ISerializationContext;
@@ -77,13 +82,16 @@ public static class BymlObjectConversions
     internal static readonly BymlConversion<Vector3>      FLOAT3        = SpecialConversions.Float3;
     internal static readonly BymlConversion<Vector3>      VECTOR3D      = SpecialConversions.Vector3D;
     internal static readonly BymlConversion<PropertyDict> PROPERTY_DICT = SpecialConversions.PropertyDict;
+    
+    internal static readonly BymlConversion<GymlRef>  GYML_REF   = FileRefConversion.For<GymlRef>();
+    internal static readonly BymlConversion<MuMapRef> MU_MAP_REF = FileRefConversion.For<MuMapRef>();
     // ReSharper restore InconsistentNaming
 }
 
 public interface IDeserializedBymlObject<T> : IDeserializedBymlObject
 {
     public static abstract Task<(bool success, T value)> DeserializeFrom(Byml byml,
-        IBymlDeserializeErrorHandler errorHandler);
+        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo);
 }
 
 public interface IDeserializedBymlObject

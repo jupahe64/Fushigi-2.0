@@ -8,12 +8,12 @@ public class WorldMapInfo : GymlFile<WorldMapInfo>
     public class CourseTableEntry : SerializableBymlObject<CourseTableEntry>
     {
         public string Key = null!;
-        public string StagePath = null!;
+        public GymlRef StagePath;
 
         protected override void Serialization<TContext>(TContext ctx)
         {
             ctx.Set(STRING, ref Key, "Key");
-            ctx.Set(STRING, ref StagePath, "StagePath");
+            ctx.Set(GYML_REF, ref StagePath, "StagePath");
         }
     }
 

@@ -10,7 +10,7 @@ using GymlTypes = Data.Files.GymlTypes;
 public class WorldList
 {
     public static async Task<(bool success, WorldList? muMap)> Load(
-        RomFS romFS, string gymlPath,
+        RomFS romFS, GymlRef gymlPath,
         IStageLoadingErrorHandler errorHandler)
     {
         if (await romFS.LoadGyml<GymlTypes.WorldList>(gymlPath, errorHandler)
@@ -18,12 +18,15 @@ public class WorldList
         
         var worldList = new WorldList(gymlPath, worldListGyml);
         
-        foreach (string refStageGymlPath in worldListGyml.WorldMapStagePath)
+        foreach (var refStageGymlPath in worldListGyml.WorldMapStagePath)
         {
-            if (string.IsNullOrEmpty(refStageGymlPath))
+            if (refStageGymlPath.GymlRef is null)
+            {
+                worldList._worldMaps.Add(null);
                 continue;
+            }
             
-            if (await WorldMap.Load(romFS, refStageGymlPath, errorHandler)
+            if (await WorldMap.Load(romFS, refStageGymlPath.GymlRef.Value, errorHandler)
                 is not (true, {} worldMap)) return (false, null);
             
             worldList._worldMaps.Add(worldMap);
@@ -33,15 +36,15 @@ public class WorldList
 
     }
     
-    public IReadOnlyList<WorldMap> Worlds => _worldMaps;
+    public IReadOnlyList<WorldMap?> Worlds => _worldMaps;
     
-    private readonly List<WorldMap> _worldMaps = [];
-    private readonly string _gymlPath;
+    private readonly List<WorldMap?> _worldMaps = [];
+    private readonly GymlRef _gymlRef;
     private readonly GymlTypes.WorldList _worldList;
 
-    private WorldList(string gymlPath, GymlTypes.WorldList worldList)
+    private WorldList(GymlRef gymlRef, GymlTypes.WorldList worldList)
     {
-        _gymlPath = gymlPath;
+        _gymlRef = gymlRef;
         _worldList = worldList;
     }
 }

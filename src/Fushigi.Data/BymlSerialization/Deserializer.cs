@@ -3,7 +3,11 @@ using BymlLibrary.Nodes.Containers;
 
 namespace Fushigi.Data.BymlSerialization;
 
-public record UnexpectedRootTypeErrorInfo(BymlNodeType ExpectedNodeType, BymlNodeType ActualNodeType);
+public record UnexpectedRootTypeErrorInfo(BymlNodeType ExpectedNodeType, BymlNodeType ActualNodeType, 
+    RomFS.RetrievedFileLocation FileLocation);
+
+public record ContentErrorsFoundErrorInfo(IReadOnlyDictionary<Byml, BymlContentErrorInfo> ContentErrors, 
+    RomFS.RetrievedFileLocation FileLocation);
 
 [Flags]
 public enum ContentErrorFlags
@@ -13,6 +17,7 @@ public enum ContentErrorFlags
     MissingKeys = 1 << 1,
     MissingElements = 1 << 2,
     UnexpectedEnumValue = 1 << 3,
+    InvalidRefPath = 1 << 4,
 }
 public record struct BymlContentErrorInfo(ContentErrorFlags Flags, BymlNodeType? ExpectedNodeType, 
     List<string>? MissingRequiredKeys, int? MinimumElementCount);
@@ -20,17 +25,18 @@ public record struct BymlContentErrorInfo(ContentErrorFlags Flags, BymlNodeType?
 public interface IBymlDeserializeErrorHandler
 {
     Task OnUnexpectedRootType(UnexpectedRootTypeErrorInfo info);
-    Task OnContentErrorsFound(IReadOnlyDictionary<Byml, BymlContentErrorInfo> errors);
+    Task OnContentErrorsFound(ContentErrorsFoundErrorInfo info);
 }
 
 public readonly struct Deserializer : ISerializationContext
 {
     public static async Task<(bool success, T value)> Deserialize<T>(Byml byml, Func<Deserializer, T> deserializeFunc,
-        IBymlDeserializeErrorHandler errorHandler)
+        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo)
     {
         if (byml.Value is not BymlMap)
         {
-            await errorHandler.OnUnexpectedRootType(new UnexpectedRootTypeErrorInfo(BymlNodeType.Map, byml.Type));
+            await errorHandler.OnUnexpectedRootType(
+                new UnexpectedRootTypeErrorInfo(BymlNodeType.Map, byml.Type, fileLocationInfo));
             return (false, default!);
         }
         
@@ -41,7 +47,7 @@ public readonly struct Deserializer : ISerializationContext
 
         if (contentErrors.Count > 0)
         {
-            await errorHandler.OnContentErrorsFound(contentErrors);
+            await errorHandler.OnContentErrorsFound(new ContentErrorsFoundErrorInfo(contentErrors, fileLocationInfo));
             return (false, default!);
         }
         
@@ -98,6 +104,13 @@ public readonly struct Deserializer : ISerializationContext
     {
         var errorInfo = GetOrCreateContentError(_node);
         errorInfo.Flags |= ContentErrorFlags.UnexpectedEnumValue;
+        _contentErrors[_node] = errorInfo;
+    }
+    
+    public void ReportInvalidRefPath()
+    {
+        var errorInfo = GetOrCreateContentError(_node);
+        errorInfo.Flags |= ContentErrorFlags.InvalidRefPath;
         _contentErrors[_node] = errorInfo;
     }
     

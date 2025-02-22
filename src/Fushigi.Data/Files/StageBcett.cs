@@ -20,7 +20,7 @@ public static class StageBcett
         public required ListSegment<Link>? Links;
         public required ListSegment<ActorToRailLink>? ActorToRailLinks;
         public required ListSegment<SimultaneousGroup>? SimultaneousGroups;
-        public required ListSegment<string>? RefStages;
+        public required ListSegment<GymlRef>? RefStages;
         
         public uint RootAreaHash;
         public string StageParamPath = null!;
@@ -35,8 +35,8 @@ public static class StageBcett
     
     public static async Task<(bool success, (Content content, IDeserializedStageDataKeeper dataKeeper))> 
         DeserializeFrom(Byml byml, 
-        IBymlDeserializeErrorHandler errorHandler) =>
-        await Deserializer.Deserialize(byml, Deserialize, errorHandler);
+        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo) =>
+        await Deserializer.Deserialize(byml, Deserialize, errorHandler, fileLocationInfo);
 
     private static (Content content, IDeserializedStageDataKeeper dataKeeper) Deserialize(Deserializer d)
     {
@@ -51,7 +51,7 @@ public static class StageBcett
             ActorToRailLinks = sod.DeserializeArray(d, "ActorToRailLinks", ActorToRailLink.Deserialize, optional: true),
             SimultaneousGroups = sod.DeserializeArray(d, "SimultaneousGroups", SimultaneousGroup.Deserialize, optional: true),
             RefStages = sod.DeserializeArray(d, "RefStages", 
-                (sd,_)=>STRING.Deserialize(sd), STRING.RequiredNodeType, optional: true),
+                (sd,_)=>GYML_REF.Deserialize(sd), STRING.RequiredNodeType, optional: true),
         };
         content.Serialization(d);
         return (content, sod);

@@ -19,7 +19,7 @@ public record MissingSubDirectoryErrorInfo(string RootDirectory, string SubDirec
 public record MissingSystemFileErrorInfo(string Directory, string FileNamePattern, RomFS.SystemFile Kind, 
     bool DirectoryExists);
 public record FileDecompressionErrorInfo(string FilePathFS, Exception InternalException);
-public record FileFormatReaderErrorInfo(string[] FilePath, Exception InternalException);
+public record FileFormatReaderErrorInfo(RomFS.RetrievedFileLocation FileLocation, Exception InternalException);
 
 public record FilePathResolutionErrorInfo((string path, bool isArchive)[] SearchPathsFS, string[] FilePath);
 
@@ -60,6 +60,60 @@ public class PackInfo
 
 public class RomFS
 {
+    public readonly record struct RetrievedFileLocation
+    {
+        public bool IsInPack(out (string packFilePath, string[] inPackSubPath) fileLocation)
+        {
+            if (_fileInPackPath != null)
+            {
+                fileLocation = (_filePathFS, _fileInPackPath);
+                return true;
+            }
+
+            fileLocation = ("", []);
+            return false;
+        }
+        
+        public bool IsInFileSystem([NotNullWhen(true)] out string? filePath)
+        {
+            if (_fileInPackPath != null)
+            {
+                filePath = _filePathFS;
+                return true;
+            }
+
+            filePath = null;
+            return false;
+        }
+
+        public record struct InPackInfo(string PackFilePath, string[] InPackSubPath);
+        public record struct InFileSystemInfo(string FilePath);
+        
+        public InPackInfo? InPack => IsInPack(out var fileLocation) ? 
+            new InPackInfo(fileLocation.packFilePath, fileLocation.inPackSubPath) : null;
+        public InFileSystemInfo? InFileSystem => IsInFileSystem(out string? filePath) ? 
+            new InFileSystemInfo(filePath) : null;
+
+        internal static RetrievedFileLocation OfInPack(string packFilePath, string[] inPackSubPath)
+        {
+            return new RetrievedFileLocation(packFilePath, inPackSubPath);
+        }
+        
+        internal static RetrievedFileLocation OfInFileSystem(string filePath)
+        {
+            return new RetrievedFileLocation(filePath, null);
+        }
+
+        private RetrievedFileLocation(string filePathFS, string[]? fileInPackPath)
+        {
+            _filePathFS = filePathFS;
+            _fileInPackPath = fileInPackPath;
+        }
+        
+        private readonly string _filePathFS;
+        private readonly string[]? _fileInPackPath;
+    }
+    
     public enum SystemFile
     {
         BootUpPack,
@@ -137,7 +191,7 @@ public class RomFS
             if (filePathFS == null)
                 return (false, null);
             
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler)
                 is not ({} _bootupPack, exists: true, success: true))
                 return (false, null);
             
@@ -159,7 +213,7 @@ public class RomFS
             if (filePathFS == null)
                 return (false, null);
             
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_resourceSizeTableFormat, errorHandler, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_resourceSizeTableFormat, errorHandler)
                 is not ({} _resourceSizeTable, exists: true, success: true))
                 return (false, null);
             
@@ -181,7 +235,7 @@ public class RomFS
             if (filePathFS == null)
                 return (false, null);
 
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_addressTableFormat, errorHandler, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_addressTableFormat, errorHandler)
                 is not ({} byml, exists: true, success: true))
                 return (false, null);
             
@@ -204,7 +258,7 @@ public class RomFS
         if (_modDirectory != null)
         {
             string filePathFS = checkedModFSFile = Path.Combine([_modDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -215,7 +269,7 @@ public class RomFS
         // try load from romFS
         {
             string filePathFS = checkedRomFSFile = Path.Combine([_baseGameDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, s_packFormatDescriptor, errorHandler) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
@@ -229,7 +283,7 @@ public class RomFS
         return (false, null);
     }
 
-    public async Task<(bool success, TFormat? content)> LoadFile<TFormat>(
+    public async Task<(bool success, TFormat? content, RetrievedFileLocation location)> LoadFile<TFormat>(
         string[] filePath, 
         FileFormatDescriptor<TFormat> format,
         IFileResolutionAndLoadingErrorHandler errorHandler,
@@ -260,7 +314,8 @@ public class RomFS
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
-                return success ? (true, file) : (false, null);
+                return success ? (true, file, RetrievedFileLocation.OfInPack(pack.FilePathFS, filePath)) 
+                    : (false, null, default);
             }
         }
         // check bootup pack
@@ -271,7 +326,8 @@ public class RomFS
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
-                return success ? (true, file) : (false, null);
+                return success ? (true, file, RetrievedFileLocation.OfInPack(_bootupPack.FilePathFS, filePath)) 
+                    : (false, null, default);
             }
         }
         #endregion
@@ -283,21 +339,21 @@ public class RomFS
         if (_modDirectory != null)
         {
             string filePathFS = checkedModFSFile = Path.Combine([_modDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorHandler, filePath) 
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorHandler) 
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
-                return success ? (true, file) : (false, null);
+                return success ? (true, file, RetrievedFileLocation.OfInFileSystem(filePathFS)) : (false, null, default);
             }
         }
         //check romFS
         {
             string filePathFS = checkedRomFSFile = Path.Combine([_baseGameDirectory, ..filePath]);
-            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorHandler, filePath)
+            if (await RomFSFileLoading.LoadFileFromFS(filePathFS, format, errorHandler)
                 is (var file, exists: true, var success))
             {
                 Debug.Assert(!success || file != null); //success => file not null
-                return success ? (true, file) : (false, null);
+                return success ? (true, file, RetrievedFileLocation.OfInFileSystem(filePathFS)) : (false, null, default);
             }
         }
         #endregion
@@ -306,7 +362,7 @@ public class RomFS
         await errorHandler.OnFileNotFound(GenerateFilePathResolutionErrorInfo(
             checkedGivenPackFile, checkedBootupPackFile, checkedModFSFile, checkedRomFSFile, filePath));
 
-        return (false, default);
+        return (false, null, default);
     }
     
     private static FilePathResolutionErrorInfo GenerateFilePathResolutionErrorInfo(

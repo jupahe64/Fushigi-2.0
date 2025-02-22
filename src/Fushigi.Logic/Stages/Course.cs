@@ -1,21 +1,22 @@
 ﻿using Fushigi.Data;
+using Fushigi.Data.Files;
 using Fushigi.Data.RomFSExtensions;
 
 namespace Fushigi.Logic.Stages;
 
 public class Course : Stage
 {
-    public new static async Task<(bool success, Course? course)> Load(RomFS romFS, string stageParamGymlPath,
+    public new static async Task<(bool success, Course? course)> Load(RomFS romFS, GymlRef stageParamGymlRef,
         IStageLoadingErrorHandler errorHandler)
     {
-        if (await Stage.Load(romFS, stageParamGymlPath, errorHandler)
+        if (await Stage.Load(romFS, stageParamGymlRef, errorHandler)
             is not (true, var baseInfo)) return (false, default);
         
         var course = new Course(baseInfo);
 
-        foreach (string refStageGymlPath in course.MuMap.RefStages)
+        foreach (var refStageGymlRef in course.MuMap.RefStages)
         {
-            if (await Area.Load(romFS, refStageGymlPath, errorHandler)
+            if (await Area.Load(romFS, refStageGymlRef, errorHandler)
                 is not (true, {} area)) return (false, null);
             
             course._areas.Add(area);

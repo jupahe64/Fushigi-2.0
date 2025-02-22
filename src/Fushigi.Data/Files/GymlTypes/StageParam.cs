@@ -17,31 +17,31 @@ public class StageParam : GymlFile<StageParam>
 
     public class StageComponents : SerializableBymlObject<StageComponents>
     {
-        public string? AreaParam;
-        public string? BakeSource;
-        public string? CourseInfo;
-        public string? MapAnalysisInfo;
-        public string? Mumap;
-        public string? StageLoadInfo;
-        public string? StageSequenceInfo;
-        public string? StaticCompoundBodySourceParam;
-        public string? WorldList;
-        public string? WorldMapAnalysisInfo;
-        public string? WorldMapInfo;
+        public GymlRef? AreaParam;
+        public GymlRef? BakeSource;
+        public GymlRef? CourseInfo;
+        public GymlRef? MapAnalysisInfo;
+        public MuMapRef? Mumap;
+        public GymlRef? StageLoadInfo;
+        public GymlRef? StageSequenceInfo;
+        public GymlRef? StaticCompoundBodySourceParam;
+        public GymlRef? WorldList;
+        public GymlRef? WorldMapAnalysisInfo;
+        public GymlRef? WorldMapInfo;
 
         protected override void Serialization<TContext>(TContext ctx)
         {
-            ctx.Set(STRING, ref AreaParam!, "AreaParam", optional: true);
-            ctx.Set(STRING, ref BakeSource!, "BakeSource", optional: true);
-            ctx.Set(STRING, ref CourseInfo!, "CourseInfo", optional: true);
-            ctx.Set(STRING, ref MapAnalysisInfo!, "MapAnalysisInfo", optional: true);
-            ctx.Set(STRING, ref Mumap!, "Mumap", optional: true);
-            ctx.Set(STRING, ref StageLoadInfo!, "StageLoadInfo", optional: true);
-            ctx.Set(STRING, ref StageSequenceInfo!, "StageSequenceInfo", optional: true);
-            ctx.Set(STRING, ref StaticCompoundBodySourceParam!, "StaticCompoundBodySourceParam", optional: true);
-            ctx.Set(STRING, ref WorldList!, "WorldList", optional: true);
-            ctx.Set(STRING, ref WorldMapAnalysisInfo!, "WorldMapAnalysisInfo", optional: true);
-            ctx.Set(STRING, ref WorldMapInfo!, "WorldMapInfo", optional: true);
+            ctx.Set(GYML_REF, ref AreaParam!, "AreaParam", optional: true);
+            ctx.Set(GYML_REF, ref BakeSource!, "BakeSource", optional: true);
+            ctx.Set(GYML_REF, ref CourseInfo!, "CourseInfo", optional: true);
+            ctx.Set(GYML_REF, ref MapAnalysisInfo!, "MapAnalysisInfo", optional: true);
+            ctx.Set(MU_MAP_REF , ref Mumap, "Mumap", optional: true);
+            ctx.Set(GYML_REF, ref StageLoadInfo!, "StageLoadInfo", optional: true);
+            ctx.Set(GYML_REF, ref StageSequenceInfo!, "StageSequenceInfo", optional: true);
+            ctx.Set(GYML_REF, ref StaticCompoundBodySourceParam!, "StaticCompoundBodySourceParam", optional: true);
+            ctx.Set(GYML_REF, ref WorldList!, "WorldList", optional: true);
+            ctx.Set(GYML_REF, ref WorldMapAnalysisInfo!, "WorldMapAnalysisInfo", optional: true);
+            ctx.Set(GYML_REF, ref WorldMapInfo!, "WorldMapInfo", optional: true);
         }
     }
 }

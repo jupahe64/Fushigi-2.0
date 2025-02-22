@@ -1,14 +1,15 @@
 ﻿using Fushigi.Data;
+using Fushigi.Data.Files;
 using Fushigi.Data.RomFSExtensions;
 
 namespace Fushigi.Logic.Stages;
 
 public sealed class Area : Stage
 {
-    public new static async Task<(bool success, Area? area)> Load(RomFS romFS, string stageParamGymlPath,
+    public new static async Task<(bool success, Area? area)> Load(RomFS romFS, GymlRef stageParamGymlRef,
         IStageLoadingErrorHandler errorHandler)
     {
-        if (await Stage.Load(romFS, stageParamGymlPath, errorHandler)
+        if (await Stage.Load(romFS, stageParamGymlRef, errorHandler)
             is not (true, var baseInfo)) return (false, default);
         
         var area = new Area(baseInfo);

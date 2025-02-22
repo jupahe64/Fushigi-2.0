@@ -7,8 +7,7 @@ public static class RomFSFileLoading
     internal static async Task<(TFormat? file, bool exists, bool success)> LoadFileFromFS<TFormat>(
         string filePathFS, 
         FileFormatDescriptor<TFormat> format,
-        IFileLoadingErrorHandler errorHandler,
-        string[] filePath)
+        IFileLoadingErrorHandler errorHandler)
         where TFormat : class
     {
         if (!File.Exists(filePathFS))
@@ -27,7 +26,8 @@ public static class RomFSFileLoading
             bytes = _bytes;
         }
 
-        var result = await ReadFileFormat(bytes, format.Reader, errorHandler, filePath);
+        var result = await ReadFileFormat(bytes, format.Reader, errorHandler, 
+            RomFS.RetrievedFileLocation.OfInFileSystem(filePathFS));
         return (result.file, exists: true, result.success);
     }
 
@@ -42,7 +42,8 @@ public static class RomFSFileLoading
         
         // we assume files in packs to not be compressed
         // as the packs themselves are already compressed so we can just read the stored bytes
-        var result = await ReadFileFormat(bytes, formatReader, errorHandler, filePath);
+        var result = await ReadFileFormat(bytes, formatReader, errorHandler, 
+            RomFS.RetrievedFileLocation.OfInPack(pack.FilePathFS, filePath));
         return (result.file, exists: true, result.success);
     }
     
@@ -67,7 +68,7 @@ public static class RomFSFileLoading
     private static async Task<(bool success, TFormat? file)> ReadFileFormat<TFormat>(
         ArraySegment<byte> bytes, Func<ArraySegment<byte>, TFormat> formatReader, 
         IFileLoadingErrorHandler errorHandler, 
-        string[] filePath)
+        RomFS.RetrievedFileLocation location)
         where TFormat : class
     {
         TFormat? file;
@@ -79,7 +80,7 @@ public static class RomFSFileLoading
         // but we definitely want to catch it to present it to the user
         catch (Exception e) 
         {
-            await errorHandler.OnFileReadFailed(new FileFormatReaderErrorInfo(filePath , e));
+            await errorHandler.OnFileReadFailed(new FileFormatReaderErrorInfo(location , e));
             return (false, null);
         }
         

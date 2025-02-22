@@ -7,16 +7,15 @@ namespace Fushigi.Logic.Stages;
 public sealed class MuMap
 {
     public static async Task<(bool success, MuMap? muMap)> Load(
-        RomFS romFS, string muMapPath,
+        RomFS romFS, MuMapRef muMapRef,
         IStageBcettFileLoadingErrorHandler errorHandler)
     {
-        if (await FileRefPathConversion.GetRomFSFilePath(muMapPath, (".mumap", ".bcett.byml.zs"), errorHandler)
-                is not (true, { } bcettPath)) return (false, null);
+        string[] bcettPath = FileRefConversion.GetRomFSFilePath(muMapRef);
         
         if (await romFS.LoadStageBcett(bcettPath, errorHandler)
                 is not (true, var stageBcett, {} dataKeeper)) return (false, null);
         
-        var muMap = new MuMap(muMapPath, 
+        var muMap = new MuMap(muMapRef, 
             stageBcett.RefStages.HasValue ? [..dataKeeper.GetData(stageBcett.RefStages.Value)] : null
         );
         
@@ -25,14 +24,14 @@ public sealed class MuMap
     
     //Todo Load stage objects with a Course loading context so all linked objects actually reference each other
     
-    public IReadOnlyList<string> RefStages => _refStages ?? (IReadOnlyList<string>)Array.Empty<string>();
+    public IReadOnlyList<GymlRef> RefStages => _refStages ?? (IReadOnlyList<GymlRef>)Array.Empty<GymlRef>();
     
-    private readonly string _muMapPath;
-    private readonly List<string>? _refStages;
+    private readonly MuMapRef _muMapRef;
+    private readonly List<GymlRef>? _refStages;
 
-    private MuMap(string muMapPath, List<string>? refStages)
+    private MuMap(MuMapRef muMapPath, List<GymlRef>? refStages)
     {
-        _muMapPath = muMapPath;
+        _muMapRef = muMapPath;
         _refStages = refStages;
     }
 }
