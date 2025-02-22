@@ -38,8 +38,8 @@ public class WorldList : GymlFile<WorldList>, IGymlType
             if (value == string.Empty)
                 return new GymlRefOrEmpty<TGymlFile>();
             
-                deserializer.ReportInvalidRefPath();
             if (!FileRefConversion.IsValid<GymlRef<TGymlFile>>(value))
+                deserializer.ReportInvalidRefPath(FileRefConversion.GetFileRefPathFormat(GymlRef<TGymlFile>.Suffix.inProduction));
         
             return new GymlRefOrEmpty<TGymlFile> { GymlRef = new GymlRef<TGymlFile> {ValidatedRefPath = value} };
         }

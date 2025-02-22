@@ -1,5 +1,6 @@
 ﻿using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
+using Fushigi.Data.Files;
 
 namespace Fushigi.Data.BymlSerialization;
 
@@ -20,7 +21,8 @@ public enum ContentErrorFlags
     InvalidRefPath = 1 << 4,
 }
 public record struct BymlContentErrorInfo(ContentErrorFlags Flags, BymlNodeType? ExpectedNodeType, 
-    List<string>? MissingRequiredKeys, int? MinimumElementCount);
+    List<string>? MissingRequiredKeys, int? MinimumElementCount, 
+    FileRefConversion.FileRefPathFormat? ExpectedFileRefPathFormat);
 
 public interface IBymlDeserializeErrorHandler
 {
@@ -107,10 +109,11 @@ public readonly struct Deserializer : ISerializationContext
         _contentErrors[_node] = errorInfo;
     }
     
-    public void ReportInvalidRefPath()
+    public void ReportInvalidRefPath(FileRefConversion.FileRefPathFormat expectedFileRefPathFormat)
     {
         var errorInfo = GetOrCreateContentError(_node);
         errorInfo.Flags |= ContentErrorFlags.InvalidRefPath;
+        errorInfo.ExpectedFileRefPathFormat = expectedFileRefPathFormat;
         _contentErrors[_node] = errorInfo;
     }
     

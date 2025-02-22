@@ -5,8 +5,14 @@ namespace Fushigi.Data.Files;
 
 public static class FileRefConversion
 {
+    public record FileRefPathFormat(string Prefix, string Suffix);
     public static BymlConversion<T> For<T>() where T : struct, IFileRef 
         => new(BymlNodeType.String, Deserialize<T>, Serialize);
+
+    public static FileRefPathFormat GetFileRefPathFormat(string suffix)
+    {
+        return new FileRefPathFormat(CommonPrefix, suffix);
+    }
 
     private static Byml Serialize<T>(T value)
         where T : struct, IFileRef
@@ -19,7 +25,7 @@ public static class FileRefConversion
     {
         string value = deserializer.GetNode().GetString();
         if (!IsValid<T>(value))
-            deserializer.ReportInvalidRefPath();
+            deserializer.ReportInvalidRefPath(GetFileRefPathFormat(T.Suffix.inProduction));
         
         return new T { ValidatedRefPath = value };
     }
