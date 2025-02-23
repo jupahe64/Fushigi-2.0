@@ -7,7 +7,14 @@ namespace Fushigi.Data.RomFSExtensions;
 
 public record LoadedGymlTypeMismatchErrorInfo(string GymlPath, Type Expected, Type AlreadyLoaded, 
     RomFS.RetrievedFileLocation AlreadyLoadedFileLocation);
-public record CyclicInheritanceErrorInfo((string gymlPath, RomFS.RetrievedFileLocation)[] InheritanceCycle);
+/// <summary>
+/// 
+/// </summary>
+/// <param name="InheritanceChain">The inheritance chain up to where the cycle was detected
+/// (Cycle is caused by the last item's parent ref) </param>
+/// <param name="CycleBeginIdx">The index of the item that is referenced by the last item, causing the cycle</param>
+public record CyclicInheritanceErrorInfo((string gymlPath, RomFS.RetrievedFileLocation)[] InheritanceChain, 
+    int CycleBeginIdx);
 
 public interface IGymlFileLoadingErrorHandler : 
     IFileResolutionAndLoadingErrorHandler, 
@@ -34,18 +41,24 @@ public static class RomFSGymlLoadingExtension
 
         return await gymlManager.LoadGyml(gymlRef,
             //no need to allocate anything until we actually have an inheritance chain
-            ImmutableList<(string, RomFS.RetrievedFileLocation)>.Empty, 
+            ImmutableStack<(string, RomFS.RetrievedFileLocation)>.Empty, 
             errorHandler,
             pack);
     }
 
     private class GymlManager(RomFS romFS)
     {
+        private class ChainLink<T>(T value)
+        {
+            public ChainLink<T>? Successor = null;
+            public T Value = value;
+        }
+        
         private readonly Dictionary<string, (object instance, RomFS.RetrievedFileLocation fileLocation)> _loadedGymlFiles = [];
         
         public async Task<(bool success, T?)> LoadGyml<T>(GymlRef<T> gymlRef,
-            //only works with recursion, stack like
-            ImmutableList<(string, RomFS.RetrievedFileLocation)> inheritanceChain, 
+            //only works with recursion
+            ImmutableStack<(string, RomFS.RetrievedFileLocation)> inheritanceChain, 
             IGymlFileLoadingErrorHandler errorHandler,
             PackInfo? pack = null)
             where T : GymlFile<T>, IGymlType, new()
@@ -82,12 +95,15 @@ public static class RomFSGymlLoadingExtension
 
             if (loadedGyml.ParentGymlRef is {} parentGymlRef)
             {
-                inheritanceChain = inheritanceChain.Add((gymlRef.ValidatedRefPath, fileLocation));
+                inheritanceChain = inheritanceChain.Push((gymlRef.ValidatedRefPath, fileLocation));
                 
                 if (inheritanceChain.Contains((parentGymlRef.ValidatedRefPath, fileLocation)))
                 {
                     //we were about to load a gyml that's already in our inheritance chain
-                    await errorHandler.OnCyclicInheritance(new CyclicInheritanceErrorInfo(inheritanceChain.ToArray()));
+                    var inheritanceChainArray = inheritanceChain.ToArray();
+                    Array.Reverse(inheritanceChainArray); //stack is iterated in reverse so we need to counter that
+                    int cycleBeginIndex = Array.IndexOf(inheritanceChainArray, (parentGymlRef.ValidatedRefPath, fileLocation));
+                    await errorHandler.OnCyclicInheritance(new CyclicInheritanceErrorInfo(inheritanceChainArray, cycleBeginIndex));
                     return (false, null);
                 }
                 
