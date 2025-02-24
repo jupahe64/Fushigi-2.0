@@ -9,7 +9,7 @@ using Fushigi.Data.Files.GymlTypes;
 
 namespace Fushigi.Data.BymlSerialization;
 
-public abstract class SerializableBymlObject<T> : IDeserializedBymlObject<T>
+public abstract class SerializableBymlObject<T>
     where T : SerializableBymlObject<T>, new()
 {
     public static async Task<(bool success, T value)> DeserializeFrom(Byml byml,
@@ -93,15 +93,4 @@ public static class BymlObjectConversions
     
     internal static readonly BymlConversion<MuMapRef> MU_MAP_REF = FileRefConversion.For<MuMapRef>();
     // ReSharper restore InconsistentNaming
-}
-
-public interface IDeserializedBymlObject<T> : IDeserializedBymlObject
-{
-    public static abstract Task<(bool success, T value)> DeserializeFrom(Byml byml,
-        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo);
-}
-
-public interface IDeserializedBymlObject
-{
-    public Byml Serialize();
 }
