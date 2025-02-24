@@ -1,4 +1,7 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
+using BymlLibrary;
+using BymlLibrary.Nodes.Containers;
 using Fushigi.Data.BymlSerialization;
 using Fushigi.Data.Files;
 using Fushigi.Data.Files.GymlTypes;
@@ -38,26 +41,16 @@ public static class RomFSGymlLoadingExtension
             s_gymlManagerLookup[romFS] = gymlManager;
         }
 
-        return await gymlManager.LoadGyml(gymlRef,
-            //no need to allocate anything until we actually have an inheritance chain
-            ImmutableStack<(string, RomFS.RetrievedFileLocation)>.Empty, 
+        return await gymlManager.LoadGyml(gymlRef, 
             errorHandler,
             pack);
     }
 
     private class GymlManager(RomFS romFS)
     {
-        private class ChainLink<T>(T value)
-        {
-            public ChainLink<T>? Successor = null;
-            public T Value = value;
-        }
-        
         private readonly Dictionary<string, (object instance, RomFS.RetrievedFileLocation fileLocation)> _loadedGymlFiles = [];
         
         public async Task<(bool success, T?)> LoadGyml<T>(GymlRef<T> gymlRef,
-            //only works with recursion
-            ImmutableStack<(string, RomFS.RetrievedFileLocation)> inheritanceChain, 
             IGymlFileLoadingErrorHandler errorHandler,
             PackInfo? pack = null)
             where T : GymlFile<T>, IGymlType, new()
@@ -65,6 +58,47 @@ public static class RomFSGymlLoadingExtension
             if (_loadedGymlFiles.TryGetValue(gymlRef.ValidatedRefPath, out var alreadyLoadedGyml))
                 return (true, (T?)alreadyLoadedGyml.instance);
 
+            if (await LoadGymlHierarchy(gymlRef, ImmutableStack<InheritanceChainItem>.Empty, 
+                errorHandler, pack) is not (true, {} gymlHierarchy))
+                return (false, null);
+
+            var foundPropertyPaths = new HashSet<PropertyPath>();
+            foreach (var (_, _, loadedByml) in gymlHierarchy)
+                CollectProperties(loadedByml, foundPropertyPaths, ImmutableStack<string>.Empty);
+
+            T? firstInChain = null;
+            T? previousInChain = null;
+            foreach ((string gymlPath, var fileLocation, var loadedByml) in gymlHierarchy)
+            {
+                if (await GymlFile<T>.DeserializeFrom(loadedByml, errorHandler, fileLocation, foundPropertyPaths)
+                    is not (true, { } loadedGyml))
+                {
+                    return (false, null);
+                }
+                
+                _loadedGymlFiles[gymlPath] = (loadedGyml, fileLocation);
+
+                if (previousInChain != null &&
+                    previousInChain.ParentGymlRef?.ValidatedRefPath != gymlPath)
+                {
+                    Debug.Fail("Something went wrong");
+                }
+                previousInChain?.SetParent(loadedGyml);
+
+                firstInChain ??= loadedGyml;
+                previousInChain = loadedGyml;
+            }
+        
+            return (true, firstInChain);
+        }
+        
+        private async Task<(bool success, InheritanceChainItem[]? bgymls)> LoadGymlHierarchy<T>(GymlRef<T> gymlRef,
+            //only works with recursion
+            ImmutableStack<InheritanceChainItem> inheritanceChain,
+            IGymlFileLoadingErrorHandler errorHandler,
+            PackInfo? pack = null)
+            where T : GymlFile<T>, IGymlType, new()
+        {
             string[]? filePath = FileRefConversion.GetRomFSFilePath(gymlRef);
             
             if (await romFS.LoadFile(filePath, FormatDescriptors.BymlUncompressed, 
@@ -75,41 +109,84 @@ public static class RomFSGymlLoadingExtension
                 return (false, null);
             }
             
-            if (await GymlFile<T>.DeserializeFrom(loadedByml, errorHandler, fileLocation)
-                is not (true, { } loadedGyml))
-            {
-                return (false, null);
-            }
+            inheritanceChain = inheritanceChain.Push(
+                new InheritanceChainItem(gymlRef.ValidatedRefPath, fileLocation, loadedByml)
+            );
 
-            if (loadedGyml.ParentGymlRef is {} parentGymlRef)
+            // this code tries to retrieve the $parent property without throwing or reporting errors.
+            // errors in type or formatting will be reported later by GymlFile<T>.Serialization.
+            if (loadedByml.Value is BymlMap rootMap && 
+                rootMap.TryGetValue("$parent", out var parentValueNode) &&
+                parentValueNode.Value is string parentGymlPath &&
+                FileRefConversion.IsValid<GymlRef<T>>(parentGymlPath))
             {
-                inheritanceChain = inheritanceChain.Push((gymlRef.ValidatedRefPath, fileLocation));
+                var parentGymlRef = FileRefConversion.Parse<GymlRef<T>>(parentGymlPath);
                 
-                if (inheritanceChain.Contains((parentGymlRef.ValidatedRefPath, fileLocation)))
+                if (TryFindGymlInChain(inheritanceChain, parentGymlPath, out var foundItem))
                 {
                     //we were about to load a gyml that's already in our inheritance chain
                     var inheritanceChainArray = inheritanceChain.ToArray();
                     Array.Reverse(inheritanceChainArray); //stack is iterated in reverse so we need to counter that
-                    int cycleBeginIndex = Array.IndexOf(inheritanceChainArray, (parentGymlRef.ValidatedRefPath, fileLocation));
-                    await errorHandler.OnCyclicInheritance(new CyclicInheritanceErrorInfo(inheritanceChainArray, cycleBeginIndex));
+                    
+                    int cycleBeginIndex = Array.IndexOf(inheritanceChainArray, foundItem);
+                    
+                    await errorHandler.OnCyclicInheritance(new CyclicInheritanceErrorInfo(
+                        Array.ConvertAll(inheritanceChainArray, item => (item.GymlPath, item.FileLocation)), 
+                        cycleBeginIndex
+                    ));
                     return (false, null);
                 }
-                
-                if (await LoadGyml<T>(parentGymlRef,
-                        inheritanceChain,
-                        errorHandler,
-                        pack) is not (true, {} loadedParentGyml))
-                {
-                    return (false, null);
-                }
-                
-                loadedGyml.SetParent(loadedParentGyml);
-            }
 
-            //only add to loaded after we loaded the entire inheritance chain and made sure there are no cycles
-            _loadedGymlFiles[gymlRef.ValidatedRefPath] = (loadedGyml, fileLocation);
+                var recursionReturn = await LoadGymlHierarchy(parentGymlRef,
+                    inheritanceChain,
+                    errorHandler,
+                    pack);
+                
+                return recursionReturn is (true, {} gymls) ? (true, gymls) : (false, null);
+            }
         
-            return (true, loadedGyml);
+            InheritanceChainItem[] returnArray;
+            {
+                returnArray = new InheritanceChainItem[inheritanceChain.Count()];
+                var idx = 0;
+                foreach (var item in inheritanceChain) 
+                    returnArray[idx++] = item;
+
+                Array.Reverse(returnArray); //stack is iterated in reverse so we need to counter that
+            }
+            
+            return (true, returnArray);
+        }
+        
+        private static void CollectProperties(Byml node, HashSet<PropertyPath> foundPropertyPaths, 
+            ImmutableStack<string> propertyPathStack)
+        {
+            if (node.Value is not BymlMap bymlMap)
+                return;
+            
+            foreach ((string key, var value) in bymlMap)
+            {
+                var keyPathStack = propertyPathStack.Push(key);
+                foundPropertyPaths.Add(new PropertyPath(keyPathStack));
+                CollectProperties(value, foundPropertyPaths, keyPathStack);
+            }
+        }
+
+        private record struct InheritanceChainItem(string GymlPath, RomFS.RetrievedFileLocation FileLocation, 
+            Byml LoadedByml);
+
+        private static bool TryFindGymlInChain(ImmutableStack<InheritanceChainItem> inheritanceChain, string gymlPath, 
+            out InheritanceChainItem foundItem)
+        {
+            // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+            foreach (var item in inheritanceChain)
+            {
+                if (item.GymlPath != gymlPath) continue;
+                foundItem = item;
+                return true;
+            }
+            foundItem = default;
+            return false;
         }
     }
 }

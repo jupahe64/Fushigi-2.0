@@ -1,4 +1,5 @@
-﻿using BymlLibrary;
+﻿using System.Collections.Immutable;
+using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
 using Fushigi.Data.Files;
 
@@ -33,7 +34,8 @@ public interface IBymlDeserializeErrorHandler
 public readonly struct Deserializer : ISerializationContext
 {
     public static async Task<(bool success, T value)> Deserialize<T>(Byml byml, Func<Deserializer, T> deserializeFunc,
-        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo)
+        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo, 
+        IReadOnlySet<PropertyPath>? ignoreMissingProperties = null)
     {
         if (byml.Value is not BymlMap)
         {
@@ -43,7 +45,8 @@ public readonly struct Deserializer : ISerializationContext
         }
         
         var contentErrors = new Dictionary<Byml, BymlContentErrorInfo>();
-        var deserializer = new Deserializer(byml, contentErrors);
+        var deserializer = new Deserializer(byml, ImmutableStack<string>.Empty,
+            contentErrors, ignoreMissingProperties);
 
         var deserializedObject = deserializeFunc(deserializer);
 
@@ -57,12 +60,18 @@ public readonly struct Deserializer : ISerializationContext
     }
     
     private readonly Byml _node;
+    private readonly ImmutableStack<string> _propertyPathStack;
     private readonly Dictionary<Byml, BymlContentErrorInfo> _contentErrors;
+    private readonly IReadOnlySet<PropertyPath>? _ignoreMissingProperties;
 
-    private Deserializer(Byml node, Dictionary<Byml, BymlContentErrorInfo> contentErrors)
+    private Deserializer(Byml node, ImmutableStack<string> propertyPathStack, 
+        Dictionary<Byml, BymlContentErrorInfo> contentErrors,
+        IReadOnlySet<PropertyPath>? ignoreMissingProperties)
     {
         _node = node;
+        _propertyPathStack = propertyPathStack;
         _contentErrors = contentErrors;
+        _ignoreMissingProperties = ignoreMissingProperties;
     }
 
     #region Error Reporting
@@ -133,7 +142,8 @@ public readonly struct Deserializer : ISerializationContext
     /// to the instance this method is called on
     /// <para>It is assumed that <paramref name="node"/> is part of the same byml file. (No checks are done)</para>
     /// </summary>
-    public Deserializer CreateDeserializerFor(Byml node) => new(node, _contentErrors);
+    public Deserializer CreateDeserializerFor(Byml node) => new(node, ImmutableStack<string>.Empty, 
+        _contentErrors, _ignoreMissingProperties);
     #endregion
     
     #region Checked ref assignment API
@@ -144,7 +154,8 @@ public readonly struct Deserializer : ISerializationContext
         if (Retrieve(conversion.RequiredNodeType, idx) is not (true, {} node))
             return; //errors (if any) have been reported, nothing to do here
 
-        value = conversion.Deserialize(new Deserializer(node, _contentErrors));
+        value = conversion.Deserialize(new Deserializer(node, ImmutableStack<string>.Empty, 
+            _contentErrors, _ignoreMissingProperties));
     }
     
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue value, string key, 
@@ -153,7 +164,8 @@ public readonly struct Deserializer : ISerializationContext
         if (Retrieve(conversion.RequiredNodeType, key, optional) is not (true, {} node))
             return; //errors (if any) have been reported, nothing to do here
 
-        value = conversion.Deserialize(new Deserializer(node, _contentErrors));
+        value = conversion.Deserialize(new Deserializer(node, _propertyPathStack.Push(key), 
+            _contentErrors, _ignoreMissingProperties));
     }
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue? value, string key, 
         bool optional = false)
@@ -162,7 +174,8 @@ public readonly struct Deserializer : ISerializationContext
         if (Retrieve(conversion.RequiredNodeType, key, optional) is not (true, {} node))
             return; //errors (if any) have been reported, nothing to do here
 
-        value = conversion.Deserialize(new Deserializer(node, _contentErrors));
+        value = conversion.Deserialize(new Deserializer(node, _propertyPathStack.Push(key), 
+            _contentErrors, _ignoreMissingProperties));
     }
     public void SetArray<TItem>(ref List<TItem> value, string key, BymlConversion<TItem> conversion, 
         bool optional = false)
@@ -191,7 +204,8 @@ public readonly struct Deserializer : ISerializationContext
                 continue;
             }
             
-            list.Add(conversion.Deserialize(new Deserializer(node, _contentErrors)));
+            list.Add(conversion.Deserialize(new Deserializer(node, ImmutableStack<string>.Empty, 
+                _contentErrors, _ignoreMissingProperties)));
         }
 
         return list;
@@ -208,7 +222,8 @@ public readonly struct Deserializer : ISerializationContext
                 continue;
             }
             
-            dict[bymlMapKey] = conversion.Deserialize(new Deserializer(node, _contentErrors));
+            dict[bymlMapKey] = conversion.Deserialize(new Deserializer(node, ImmutableStack<string>.Empty, 
+                _contentErrors, _ignoreMissingProperties));
         }
 
         return dict;
@@ -229,7 +244,8 @@ public readonly struct Deserializer : ISerializationContext
 
         if (!map.TryGetValue(key, out var retrievedNode))
         {
-            if (!isOptional)
+            if (!isOptional && 
+                _ignoreMissingProperties?.Contains(new PropertyPath(_propertyPathStack.Push(key))) != true)
                 ReportMissingKey(key);
             return (false, null);
         }

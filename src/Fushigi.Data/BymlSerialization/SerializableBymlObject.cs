@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Immutable;
+using System.Numerics;
 using BymlLibrary;
 using BymlLibrary.Nodes.Containers;
 using Fushigi.Data.Files;
@@ -13,9 +14,11 @@ public abstract class SerializableBymlObject<T>
     where T : SerializableBymlObject<T>, new()
 {
     public static async Task<(bool success, T value)> DeserializeFrom(Byml byml,
-        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo)
+        IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo,
+        IReadOnlySet<PropertyPath>? ignoreMissingProperties = null)
     {
-        return await Deserializer.Deserialize(byml, DeserializeFunc, errorHandler, fileLocationInfo);
+        return await Deserializer.Deserialize(byml, DeserializeFunc, errorHandler, fileLocationInfo, 
+            ignoreMissingProperties);
     }
     
     public static readonly BymlConversion<T> Conversion = new(BymlNodeType.Map, DeserializeFunc, SerializeFunc);
