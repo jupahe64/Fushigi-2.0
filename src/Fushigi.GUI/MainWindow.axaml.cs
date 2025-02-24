@@ -84,9 +84,6 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         public Task OnFileReadFailed(FileFormatReaderErrorInfo info)
             => throw new System.NotImplementedException();
 
-        public Task OnGymlTypeMismatch(LoadedGymlTypeMismatchErrorInfo info)
-            => throw new System.NotImplementedException();
-
         public Task OnCyclicInheritance(CyclicInheritanceErrorInfo info)
             => throw new System.NotImplementedException();
 

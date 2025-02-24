@@ -20,7 +20,6 @@ public interface IGymlFileLoadingErrorHandler :
     IFileResolutionAndLoadingErrorHandler, 
     IBymlDeserializeErrorHandler
 {
-    Task OnGymlTypeMismatch(LoadedGymlTypeMismatchErrorInfo info);
     Task OnCyclicInheritance(CyclicInheritanceErrorInfo info);
 }
 
@@ -64,18 +63,7 @@ public static class RomFSGymlLoadingExtension
             where T : GymlFile<T>, IGymlType, new()
         {
             if (_loadedGymlFiles.TryGetValue(gymlRef.ValidatedRefPath, out var alreadyLoadedGyml))
-            {
-                if (alreadyLoadedGyml.instance is not T alreadyLoadedGymlT)
-                {
-                    await errorHandler.OnGymlTypeMismatch(
-                        new LoadedGymlTypeMismatchErrorInfo(gymlRef.ValidatedRefPath, 
-                            typeof(T), alreadyLoadedGyml.instance.GetType(), 
-                            alreadyLoadedGyml.fileLocation)
-                    );
-                    return (false, null);
-                }
-                return (true, (T?)alreadyLoadedGymlT);
-            }
+                return (true, (T?)alreadyLoadedGyml.instance);
 
             string[]? filePath = FileRefConversion.GetRomFSFilePath(gymlRef);
             
