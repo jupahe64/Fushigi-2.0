@@ -13,20 +13,26 @@ public sealed class WorldMap : Stage
     {
         if (await Stage.Load(romFS, stageParamGymlRef, errorHandler)
             is not (true, var baseInfo)) return (false, default);
+
+        var worldMapInfoRef = baseInfo.StageParam.Get(
+            x => ref x.Components, 
+            x => ref x._.WorldMapInfo
+            )!.Value;
         
-        if (await romFS.LoadGyml(baseInfo.StageParam.Components.WorldMapInfo!.Value, errorHandler)
+        if (await romFS.LoadGyml(worldMapInfoRef, 
+                errorHandler)
             is not (true, {} worldMapInfo)) return (false, default);
         
         var worldMap = new WorldMap(baseInfo, worldMapInfo);
         return (true, worldMap);
     }
-    
-    public IEnumerable<string> CourseKeys => _worldMapInfo.CourseTable.Select(x=>x.Key);
+
+    public IEnumerable<string> CourseKeys => _worldMapInfo.Get(x=>ref x.CourseTable).Select(x=>x.Key);
 
     public async Task<(bool success, Course? course)> LoadCourse(int courseIndex, 
         IStageLoadingErrorHandler errorHandler)
     {
-        var stagePath = _worldMapInfo.CourseTable[courseIndex].StagePath;
+        var stagePath = _worldMapInfo.Get(x=>ref x.CourseTable)[courseIndex].StagePath;
         if (await Course.Load(RomFS, stagePath, errorHandler)
             is not (true, var course)) return (false, null);
         

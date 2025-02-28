@@ -44,6 +44,7 @@ public static class SpecialConversions
     
     private static Vector3 DeserializeFloat3(Deserializer deserializer)
     {
+        deserializer.ReportAllMissingKeysAndIndices = true; //Vector3 cannot be partially assigned
         Vector3 vec = default;
         deserializer.Set(Conversions.Float, ref vec.X, 0);
         deserializer.Set(Conversions.Float, ref vec.Y, 1);
@@ -75,6 +76,7 @@ public static class SpecialConversions
     
     private static Vector3 DeserializeVector3D(Deserializer deserializer)
     {
+        deserializer.ReportAllMissingKeysAndIndices = true; //Vector3 cannot be partially assigned
         Vector3 vec = default;
         deserializer.Set(Conversions.Float, ref vec.X, "X");
         deserializer.Set(Conversions.Float, ref vec.Y, "Y");

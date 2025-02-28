@@ -18,7 +18,7 @@ public class WorldList
         
         var worldList = new WorldList(gymlPath, worldListGyml);
         
-        foreach (var refStageGymlPath in worldListGyml.WorldMapStagePath)
+        foreach (var refStageGymlPath in worldListGyml.Get(x=>ref x.WorldMapStagePath))
         {
             if (refStageGymlPath.GymlRef is null)
             {

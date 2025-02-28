@@ -37,8 +37,13 @@ public abstract class Stage
     {
         if (await romFS.LoadGyml(stageParamGymlRef, errorHandler)
             is not (true, { } stageParam)) return (false, default);
+
+        var muMapRef = stageParam.Get(
+            x=>ref x.Components, 
+            x=>ref x._.Mumap
+            )!.Value;
         
-        if (await MuMap.Load(romFS, stageParam.Components.Mumap!.Value, errorHandler)
+        if (await MuMap.Load(romFS, muMapRef, errorHandler)
             is not (true, { } muMap)) return (false, default);
         
         var info = new StageBaseInfo

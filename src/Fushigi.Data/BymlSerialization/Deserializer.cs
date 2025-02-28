@@ -31,8 +31,13 @@ public interface IBymlDeserializeErrorHandler
     Task OnContentErrorsFound(ContentErrorsFoundErrorInfo info);
 }
 
-public readonly struct Deserializer : ISerializationContext
+public struct Deserializer : ISerializationContext
 {
+    /// <summary>
+    /// If set to true this Deserializer instance and all it's subsequent instances will
+    /// report missing keys and indices even if they are excluded from the standard error reporting
+    /// </summary>
+    public bool ReportAllMissingKeysAndIndices;
     public static async Task<(bool success, T value)> Deserialize<T>(Byml byml, Func<Deserializer, T> deserializeFunc,
         IBymlDeserializeErrorHandler errorHandler, RomFS.RetrievedFileLocation fileLocationInfo, 
         IReadOnlySet<PropertyPath>? ignoreMissingProperties = null)
@@ -244,8 +249,7 @@ public readonly struct Deserializer : ISerializationContext
 
         if (!map.TryGetValue(key, out var retrievedNode))
         {
-            if (!isOptional && 
-                _ignoreMissingProperties?.Contains(new PropertyPath(_propertyPathStack.Push(key))) != true)
+            if (!isOptional && (ReportAllMissingKeysAndIndices || !CanIgnoreMissing(key)))
                 ReportMissingKey(key);
             return (false, null);
         }
@@ -258,6 +262,10 @@ public readonly struct Deserializer : ISerializationContext
         
         return (true, retrievedNode);
     }
+
+    private bool CanIgnoreMissing(string key) => 
+        _ignoreMissingProperties?.Contains(new PropertyPath(_propertyPathStack.Push(key))) ?? false;
+    
     
     /// <summary>
     /// Retrieve the value in the BymlArray of _node by idx and check type

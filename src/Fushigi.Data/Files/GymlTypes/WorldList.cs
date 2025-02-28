@@ -8,6 +8,7 @@ namespace Fushigi.Data.Files.GymlTypes;
 /// </summary>
 public class WorldList : GymlFile<WorldList>, IGymlType
 {
+    protected override WorldList This => this;
     public static string GymlTypeSuffix => "game__stage__WorldList";
     public static readonly string[] DefaultSavePath = ["Stage", "WorldList"];
     
@@ -45,7 +46,7 @@ public class WorldList : GymlFile<WorldList>, IGymlType
         }
     }
     
-    public List<GymlRefOrEmpty<StageParam>> WorldMapStagePath = null!;
+    public INHERITED< List<GymlRefOrEmpty<StageParam>> > WorldMapStagePath;
     
     #region De/Serialization
 

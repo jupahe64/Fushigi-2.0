@@ -4,10 +4,11 @@ namespace Fushigi.Data.Files.GymlTypes;
 
 public class WorldMapInfo : GymlFile<WorldMapInfo>, IGymlType
 {
+    protected override WorldMapInfo This => this;
     public static string GymlTypeSuffix => "game__stage__WorldMapInfo";
     public static readonly string[] DefaultSavePath = ["Stage", "WorldMapInfo"];
-    
-    public List<CourseTableEntry> CourseTable;
+
+    public INHERITED< List<CourseTableEntry> > CourseTable;
     public class CourseTableEntry : SerializableBymlObject<CourseTableEntry>
     {
         public string Key = null!;

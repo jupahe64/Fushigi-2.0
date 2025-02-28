@@ -1,5 +1,8 @@
 ﻿namespace Fushigi.Data.BymlSerialization;
 
+/// <summary>
+/// Implemented only by <see cref="Deserializer"/> and <see cref="Serializer"/>
+/// </summary>
 public interface ISerializationContext
 {
     public void Set<TValue>(BymlConversion<TValue> conversion, ref TValue value, string key,
