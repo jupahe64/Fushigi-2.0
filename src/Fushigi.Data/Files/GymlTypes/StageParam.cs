@@ -5,16 +5,29 @@ namespace Fushigi.Data.Files.GymlTypes;
 
 public class StageParam : GymlFile<StageParam>, IGymlType
 {
+    public enum StageCategory
+    {
+        Invalid = 0,
+        Area,
+        Base,
+        Course,
+        Course1Area,
+        Demo,
+        Title,
+        WorldMap
+    }
     protected override StageParam This => this;
     public static string GymlTypeSuffix => "game__stage__StageParam";
     public static readonly string[] DefaultSavePath = ["Stage", "StageParam"];
 
     public INHERITED< StageComponents > Components;
+    public INHERITED< StageCategory >   Category;
 
     protected override void Serialization<TContext>(TContext ctx)
     {
         base.Serialization(ctx);
         ctx.SetObject(ref Components, "Components");
+        ctx.Set(SpecialConversions.GetStringEnumConversion<StageCategory>(), ref Category, "Category");
     }
 
     public class StageComponents : SerializableBymlObject<StageComponents>

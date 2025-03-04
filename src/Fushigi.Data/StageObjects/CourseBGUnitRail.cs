@@ -6,7 +6,7 @@ namespace Fushigi.Data.StageObjects;
 
 public struct CourseBgUnitData()
 {
-    private static BymlConversion<ModelTypes> MODEL_TYPE = SpecialConversions.GetEnumConversion<ModelTypes>();
+    private static BymlConversion<ModelTypes> MODEL_TYPE = SpecialConversions.GetIntEnumConversion<ModelTypes>();
     public enum ModelTypes
     {
         Solid, 

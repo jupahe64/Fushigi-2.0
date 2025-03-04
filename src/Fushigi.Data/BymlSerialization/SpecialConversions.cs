@@ -7,17 +7,17 @@ namespace Fushigi.Data.BymlSerialization;
 
 public static class SpecialConversions
 {
-    #region Enum
-    public static BymlConversion<T> GetEnumConversion<T>() 
+    #region Int Enum Value
+    public static BymlConversion<T> GetIntEnumConversion<T>() 
         where T : struct, Enum
     {
         if (Unsafe.SizeOf<T>() != sizeof(int))
             throw new ArgumentException($"The underlying type of enum {nameof(T)} is not a 32 bit integer.", nameof(T));
         
-        return new BymlConversion<T>(BymlNodeType.Int, DeserializeEnum<T>, SerializeEnum);
+        return new BymlConversion<T>(BymlNodeType.Int, DeserializeEnumIntValue<T>, SerializeEnumIntValue);
     }
 
-    private static T DeserializeEnum<T>(Deserializer deserializer)
+    private static T DeserializeEnumIntValue<T>(Deserializer deserializer)
         where T : struct, Enum
     {
         int value = deserializer.GetNode().GetInt();
@@ -30,10 +30,36 @@ public static class SpecialConversions
         return enumValue;
     }
     
-    private static Byml SerializeEnum<T>(T value)
+    private static Byml SerializeEnumIntValue<T>(T value)
         where T : struct, Enum
     {
         return new Byml(Unsafe.As<T, int>(ref value));
+    }
+    #endregion
+    
+    #region String Enum Value
+    public static BymlConversion<T> GetStringEnumConversion<T>() 
+        where T : struct, Enum
+    {
+        return new BymlConversion<T>(BymlNodeType.String, DeserializeEnumStringValue<T>, SerializeEnumStringValue);
+    }
+
+    private static T DeserializeEnumStringValue<T>(Deserializer deserializer)
+        where T : struct, Enum
+    {
+        string value = deserializer.GetNode().GetString();
+        if (!Enum.TryParse(value, out T enumValue))
+        {
+            deserializer.ReportUnexpectedEnumValue();
+            return default;
+        }
+        return enumValue;
+    }
+    
+    private static Byml SerializeEnumStringValue<T>(T value)
+        where T : struct, Enum
+    {
+        return new Byml(Enum.GetName(value) ?? throw new ArgumentException());
     }
     #endregion
     
