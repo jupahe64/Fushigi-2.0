@@ -23,7 +23,7 @@ public sealed class MuMap
                 is not (true, var stageBcett, {} dataKeeper)) return (false, null);
 
         var muMap = new MuMap(muMapRef);
-        foreach (STAGE_PARAM_REF stageRef in dataKeeper.GetDataNoSpan(stageBcett.RefStages))
+        foreach (STAGE_PARAM_REF stageRef in dataKeeper.GetData(stageBcett.RefStages))
         {
             if (!await refStageLoader(stageRef))
                 return (false, null);

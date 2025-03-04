@@ -103,7 +103,6 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         
         if (await worldList.Worlds[0]!.LoadCourse(1, errorHandler)
             is not (true, { } course)) return;
-        
     }
     
     public async void LoadGame(string baseGameRomFSPath, string? modRomFSPath)
