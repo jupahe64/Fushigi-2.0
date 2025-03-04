@@ -10,6 +10,7 @@ public struct ListSegment<T>
 {
     internal readonly int Start;
     internal readonly int End;
+    public int Count => End-Start;
 
     public ListSegment(int start, int end)
     {
@@ -30,12 +31,54 @@ public struct ListRef<T>
 
 public interface IDeserializedStageDataKeeper
 {
+    public struct ListSegmentData<T>(ListSegment<T> segment, List<T> list)
+    {
+        private readonly ListSegment<T> _segment = segment;
+        private readonly List<T> _list = list;
+        public Enumerator GetEnumerator() => new Enumerator(this);
+
+        public struct Enumerator(ListSegmentData<T> @ref)
+        {
+            private int _index = @ref._segment.Start - 1;
+
+            public bool MoveNext()
+            {
+                _index++;
+                return _index < @ref._segment.End;
+            }
+            
+            public T Current => @ref._list[_index];
+        }
+    }
+    public ListSegmentData<T> GetDataNoSpan<T>(ListSegment<T> segment);
+    public ListSegmentData<T> GetDataNoSpan<T>(ListSegment<T>? segment)
+    {
+        return segment.HasValue ? GetDataNoSpan<T>(segment.Value) : default;
+    }
     public ReadOnlySpan<T> GetData<T>(ListSegment<T> segment);
     public T GetData<T>(ListRef<T> listRef);
+    public ReadOnlySpan<T> GetData<T>(ListSegment<T>? segment)
+    {
+        return segment.HasValue ? GetData<T>(segment.Value) : Span<T>.Empty;
+    }
 }
 
 internal class StageObjectsDeserializer : IDeserializedStageDataKeeper
 {
+    public IDeserializedStageDataKeeper.ListSegmentData<T> GetDataNoSpan<T>(ListSegment<T> segment)
+    {
+        if (!_stageObjectLists.TryGetValue(typeof(T), out var listObject))
+            throw new ArgumentException("No objects of given type", nameof(T));
+        
+        var list = (List<T>)listObject;
+        
+        int start = segment.Start;
+        int end = segment.End;
+        if (!(0 <= start && start <= end && end <= list.Count))
+            throw new ArgumentException("Invalid range", nameof(segment));
+        
+        return new IDeserializedStageDataKeeper.ListSegmentData<T>(segment, list);
+    }
     public ReadOnlySpan<T> GetData<T>(ListSegment<T> segment)
     {
         if (!_stageObjectLists.TryGetValue(typeof(T), out var listObject))

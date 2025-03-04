@@ -10,25 +10,31 @@ public class Course : Stage
         GymlRef<StageParam> stageParamGymlRef,
         IStageLoadingErrorHandler errorHandler)
     {
-        if (await Stage.Load(romFS, stageParamGymlRef, errorHandler)
-            is not (true, var baseInfo)) return (false, default);
+        var stageLoadContext = new MuMap.StageLoadContext();
         
-        var course = new Course(baseInfo);
+        List<Area> areas = new List<Area>();
 
-        foreach (var refStageGymlRef in course.MuMap.RefStages)
+        async Task<bool> AddStageRef(GymlRef<StageParam> refStageGymlRef)
         {
-            if (await Area.Load(romFS, refStageGymlRef, errorHandler)
-                is not (true, {} area)) return (false, null);
+            if (await Area.Load(romFS, refStageGymlRef, stageLoadContext, errorHandler)
+                is not (true, {} area)) return (false);
             
-            course._areas.Add(area);
+            areas.Add(area);
+            return true;
         }
-        
+
+        if (await Stage.Load(romFS, stageParamGymlRef, stageLoadContext,  AddStageRef, errorHandler)
+            is not (true, var baseInfo)) return (false, default);
+
+        var course = new Course(baseInfo, areas);
         return (true, course);
     }
     
     public IReadOnlyList<Area> Areas => _areas;
-    private readonly List<Area> _areas = [];
+    private List<Area> _areas;
     
-    private Course(in StageBaseInfo baseInfo)
-        : base(in baseInfo) { }
+    private Course(in StageBaseInfo baseInfo, List<Area> areas)
+        : base(in baseInfo) { 
+            _areas = areas;
+        }
 }

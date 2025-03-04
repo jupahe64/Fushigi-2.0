@@ -32,7 +32,7 @@ public abstract class Stage
     }
     
     protected static async Task<(bool success, StageBaseInfo loadedInfo)> Load(
-        RomFS romFS, GymlRef<StageParam> stageParamGymlRef,
+        RomFS romFS, GymlRef<StageParam> stageParamGymlRef, MuMap.StageLoadContext stageLoadContext, Func<GymlRef<StageParam>, Task<bool>> refStageLoader,
         IStageLoadingErrorHandler errorHandler)
     {
         if (await romFS.LoadGyml(stageParamGymlRef, errorHandler)
@@ -43,7 +43,7 @@ public abstract class Stage
             x=>ref x._.Mumap
             )!.Value;
         
-        if (await MuMap.Load(romFS, muMapRef, errorHandler)
+        if (await MuMap.Load(romFS, muMapRef, stageLoadContext, refStageLoader, errorHandler)
             is not (true, { } muMap)) return (false, default);
         
         var info = new StageBaseInfo

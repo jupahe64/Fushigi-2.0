@@ -11,7 +11,8 @@ public sealed class WorldMap : Stage
         GymlRef<StageParam> stageParamGymlRef,
         IStageLoadingErrorHandler errorHandler)
     {
-        if (await Stage.Load(romFS, stageParamGymlRef, errorHandler)
+        var stageLoadContext = new MuMap.StageLoadContext();
+        if (await Stage.Load(romFS, stageParamGymlRef, stageLoadContext,  _ => Task.FromResult(false), errorHandler)
             is not (true, var baseInfo)) return (false, default);
 
         var worldMapInfoRef = baseInfo.StageParam.Get(
