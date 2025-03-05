@@ -32,7 +32,7 @@ public abstract class GymlFile<T> : SerializableBymlObject<T>
     {
         foreach (var element in new IterableHierarchy(this))
         {
-            ref var inheritedValue = ref accessor(This);
+            ref var inheritedValue = ref accessor(element.This);
             if (inheritedValue.IsPresent)
                 return inheritedValue.Value;
         }
@@ -45,7 +45,7 @@ public abstract class GymlFile<T> : SerializableBymlObject<T>
     {
         foreach (var element in new IterableHierarchy(this))
         {
-            ref var inheritedValue1 = ref accessor(This);
+            ref var inheritedValue1 = ref accessor(element.This);
             if (!inheritedValue1.IsPresent) continue;
             
             ref var inheritedValue2 = ref subAccessor(new ByRef<TValue1>(ref inheritedValue1.Value));
@@ -63,7 +63,7 @@ public abstract class GymlFile<T> : SerializableBymlObject<T>
     {
         foreach (var element in new IterableHierarchy(this))
         {
-            ref var inheritedValue1 = ref accessor(This);
+            ref var inheritedValue1 = ref accessor(element.This);
             if (!inheritedValue1.IsPresent) continue;
             
             ref var inheritedValue2 = ref subAccessor1(new(ref inheritedValue1.Value));
@@ -160,7 +160,7 @@ public abstract class GymlFile<T> : SerializableBymlObject<T>
                 }
                 else if (_remainingHierarchy != null)
                 {
-                    _remainingHierarchy = _originalHierarchy.Parent;
+                    _remainingHierarchy = _remainingHierarchy.Parent;
                 }
 
                 return _remainingHierarchy != null;
