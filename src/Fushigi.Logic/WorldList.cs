@@ -9,11 +9,11 @@ using GymlTypes = Data.Files.GymlTypes;
 
 public class WorldList
 {
-    public static async Task<(bool success, WorldList? muMap)> Load(
+    public static async Task<(bool success, WorldList? worldList)> Load(
         RomFS romFS, GymlRef<GymlTypes.WorldList> gymlPath,
         IStageLoadingErrorHandler errorHandler)
     {
-        if (await romFS.LoadGyml<GymlTypes.WorldList>(gymlPath, errorHandler)
+        if (await romFS.LoadGyml(gymlPath, errorHandler)
             is not (true, { } worldListGyml)) return (false, null);
         
         var worldList = new WorldList(gymlPath, worldListGyml);
@@ -25,6 +25,10 @@ public class WorldList
                 worldList._worldMaps.Add(null);
                 continue;
             }
+            
+            await Stage.ValidateCategory(romFS, refStageGymlPath.GymlRef.Value, 
+                GymlTypes.StageParam.StageCategory.WorldMap, 
+                romFS.GetLoadedGymlFileLocation(gymlPath), errorHandler);
             
             if (await WorldMap.Load(romFS, refStageGymlPath.GymlRef.Value, errorHandler)
                 is not (true, {} worldMap)) return (false, null);

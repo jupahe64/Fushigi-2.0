@@ -30,6 +30,18 @@ public static class RomFSGymlLoadingExtension
 {
     private static readonly Dictionary<RomFS, GymlManager> s_gymlManagerLookup = [];
     
+    public static RomFS.RetrievedFileLocation GetLoadedGymlFileLocation<T>(this RomFS romFS, GymlRef<T> gymlRef)
+        where T : GymlFile<T>, IGymlType, new()
+    {
+        if (!s_gymlManagerLookup.TryGetValue(romFS, out var gymlManager))
+        {
+            gymlManager = new GymlManager(romFS);
+            s_gymlManagerLookup[romFS] = gymlManager;
+        }
+        
+        return gymlManager.GetLoadedGymlFileLocation(gymlRef);
+    }
+    
     public static async Task<(bool success, T?)> LoadGyml<T>(this RomFS romFS, GymlRef<T> gymlRef,
         IGymlFileLoadingErrorHandler errorHandler,
         PackInfo? pack = null)
@@ -49,6 +61,10 @@ public static class RomFSGymlLoadingExtension
     private class GymlManager(RomFS romFS)
     {
         private readonly Dictionary<string, (object instance, RomFS.RetrievedFileLocation fileLocation)> _loadedGymlFiles = [];
+
+        public RomFS.RetrievedFileLocation GetLoadedGymlFileLocation<T>(GymlRef<T> gymlRef)
+            where T : GymlFile<T>, IGymlType, new()
+        => _loadedGymlFiles[gymlRef.ValidatedRefPath].fileLocation;
         
         public async Task<(bool success, T?)> LoadGyml<T>(GymlRef<T> gymlRef,
             IGymlFileLoadingErrorHandler errorHandler,

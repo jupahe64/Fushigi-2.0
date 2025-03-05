@@ -92,6 +92,12 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
 
         public Task OnContentErrorsFound(ContentErrorsFoundErrorInfo info) 
             => throw new System.NotImplementedException();
+
+        public Task OnStageParamComponentMissing(StageComponentMissingErrorInfo info) 
+            => throw new System.NotImplementedException();
+
+        public Task OnUnexpectedStageCategory(UnexpectedStageCategoryErrorInfo info) 
+            => throw new System.NotImplementedException();
     }
 
     private async void Open_OnClick(object? sender, RoutedEventArgs e)

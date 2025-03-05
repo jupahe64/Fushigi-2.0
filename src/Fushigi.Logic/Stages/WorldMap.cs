@@ -7,34 +7,34 @@ namespace Fushigi.Logic.Stages;
 
 public sealed class WorldMap : Stage
 {
-    public new static async Task<(bool success, WorldMap? worldMap)> Load(RomFS romFS, 
-        GymlRef<StageParam> stageParamGymlRef,
+    public static async Task<(bool success, WorldMap? worldMap)> Load(RomFS romFS, 
+        GymlRef<StageParam> stageParamRef,
         IStageLoadingErrorHandler errorHandler)
     {
         var stageLoadContext = new MuMap.StageLoadContext();
-        if (await Stage.Load(romFS, stageParamGymlRef, stageLoadContext,  _ => Task.FromResult(false), errorHandler)
+        if (await Stage.Load(romFS, stageParamRef, stageLoadContext, 
+                refStageLoader: _ => Task.FromResult(true), //ignore ref stages in worldMap
+                errorHandler)
             is not (true, var baseInfo)) return (false, default);
 
-        var worldMapInfoRef = baseInfo.StageParam.Get(
-            x => ref x.Components, 
-            x => ref x._.WorldMapInfo
-            )!.Value;
         
-        if (await romFS.LoadGyml(worldMapInfoRef, 
-                errorHandler)
+        if (await baseInfo.GetComponent("WorldMapInfo", x => ref x._.WorldMapInfo, errorHandler) 
+            is not (true, { } worldMapInfoRef)) return (false, default);
+        
+        if (await romFS.LoadGyml(worldMapInfoRef, errorHandler)
             is not (true, {} worldMapInfo)) return (false, default);
         
         var worldMap = new WorldMap(baseInfo, worldMapInfo);
         return (true, worldMap);
     }
 
-    public IEnumerable<string> CourseKeys => _worldMapInfo.Get(x=>ref x.CourseTable).Select(x=>x.Key);
+    public IEnumerable<(string, string)> CourseKeys => _worldMapInfo.Get(x=>ref x.CourseTable).Select(x=>(x.Key, x.StagePath.ValidatedRefPath));
 
-    public async Task<(bool success, Course? course)> LoadCourse(int courseIndex, 
+    public async Task<(bool success, Stage? stage)> LoadCourse(int courseIndex, 
         IStageLoadingErrorHandler errorHandler)
     {
         var stagePath = _worldMapInfo.Get(x=>ref x.CourseTable)[courseIndex].StagePath;
-        if (await Course.Load(RomFS, stagePath, errorHandler)
+        if (await StageLoading.Load(RomFS, stagePath, errorHandler)
             is not (true, var course)) return (false, null);
         
         return (true, course);
