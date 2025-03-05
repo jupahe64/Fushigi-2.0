@@ -76,7 +76,7 @@ public class RomFS
         
         public bool IsInFileSystem([NotNullWhen(true)] out string? filePath)
         {
-            if (_fileInPackPath != null)
+            if (_filePathFS != null)
             {
                 filePath = _filePathFS;
                 return true;
