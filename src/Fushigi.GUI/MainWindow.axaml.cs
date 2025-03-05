@@ -93,6 +93,9 @@ public partial class MainWindow : Window, IRomFSLoadingErrorHandler
         public Task OnContentErrorsFound(ContentErrorsFoundErrorInfo info) 
             => throw new System.NotImplementedException();
 
+        public Task OnInvalidMapData(InvalidMapDataErrorInfo errorInfo)
+            => throw new System.NotImplementedException();
+
         public Task OnStageParamComponentMissing(StageComponentMissingErrorInfo info) 
             => throw new System.NotImplementedException();
 

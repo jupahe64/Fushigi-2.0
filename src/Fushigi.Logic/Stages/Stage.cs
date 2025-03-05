@@ -12,7 +12,7 @@ public record UnexpectedStageCategoryErrorInfo(StageParam.StageCategory StageCat
     RomFS.RetrievedFileLocation StageParamFileLocation,
     RomFS.RetrievedFileLocation? ReferencingFileLocationInfo = null);
 public interface IStageLoadingErrorHandler
-: IGymlFileLoadingErrorHandler, IStageBcettFileLoadingErrorHandler
+: IGymlFileLoadingErrorHandler, IMapLoadingErrorHandler
 {
     public Task OnStageParamComponentMissing(StageComponentMissingErrorInfo info);
     public Task OnUnexpectedStageCategory(UnexpectedStageCategoryErrorInfo info);
